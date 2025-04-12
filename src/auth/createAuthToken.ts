@@ -1,8 +1,4 @@
-/**
- * Auth header creation for NEAR Simple Signing
- */
-
-import type { NearAuthData } from '../types.js';
+import type { NearAuthData } from "../types.js";
 
 /**
  * Create properly formatted auth token for API authentication

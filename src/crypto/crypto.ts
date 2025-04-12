@@ -1,9 +1,9 @@
-import * as borsh from 'borsh';
-import nacl from 'tweetnacl';
-import type { NearAuthPayload } from '../types.js';
-import { stringToUint8Array } from '../utils/encoding.js';
+import * as borsh from "borsh";
+import nacl from "tweetnacl";
+import type { NearAuthPayload } from "../types.js";
+import { stringToUint8Array } from "../utils/encoding.js";
 
-export const ED25519_PREFIX = 'ed25519:';
+export const ED25519_PREFIX = "ed25519:";
 export const TAG = 2147484061; // this came from nearai, idk what it means
 
 /**
@@ -12,7 +12,7 @@ export const TAG = 2147484061; // this came from nearai, idk what it means
  * @returns Padded nonce as Uint8Array
  */
 export function padNonce(nonce: string): Uint8Array {
-  const paddedNonce = nonce.padStart(32, '0');
+  const paddedNonce = nonce.padStart(32, "0");
   return stringToUint8Array(paddedNonce);
 }
 
@@ -33,11 +33,11 @@ export function serializePayload(payload: NearAuthPayload): Uint8Array {
   // Can we sync this borsch schema with rust types?
   const schema = {
     struct: {
-      tag: 'u32',
-      message: 'string',
-      nonce: { array: { type: 'u8', len: 32 } },
-      receiver: 'string',
-      callback_url: { option: 'string' },
+      tag: "u32",
+      message: "string",
+      nonce: { array: { type: "u8", len: 32 } },
+      receiver: "string",
+      callback_url: { option: "string" },
     },
   };
 
@@ -52,24 +52,26 @@ export function serializePayload(payload: NearAuthPayload): Uint8Array {
 export async function hashPayload(payload: Uint8Array): Promise<Uint8Array> {
   try {
     // Try to use the Web Crypto API first (works in modern browsers and Node.js)
-    if (typeof crypto !== 'undefined' && crypto.subtle) {
-      const hashBuffer = await crypto.subtle.digest('SHA-256', payload);
+    if (typeof crypto !== "undefined" && crypto.subtle) {
+      const hashBuffer = await crypto.subtle.digest("SHA-256", payload);
       return new Uint8Array(hashBuffer);
     }
 
     // Fallback to Node.js crypto if available
     try {
-      const nodeCrypto = await import('node:crypto');
-      const hash = nodeCrypto.createHash('sha256');
+      const nodeCrypto = await import("node:crypto");
+      const hash = nodeCrypto.createHash("sha256");
       hash.update(new Uint8Array(payload));
       return new Uint8Array(hash.digest());
     } catch (e) {
       // If neither is available, use a fallback implementation
-      console.warn('Crypto API not available, using fallback hash implementation');
+      console.warn(
+        "Crypto API not available, using fallback hash implementation",
+      );
       return fallbackHash(payload);
     }
   } catch (error) {
-    console.warn('Error using crypto API, falling back to simple hash', error);
+    console.warn("Error using crypto API, falling back to simple hash", error);
     return fallbackHash(payload);
   }
 }
@@ -102,7 +104,7 @@ export async function verifySignature(
   signature: Uint8Array,
   publicKey: Uint8Array,
   nonce: Uint8Array,
-  recipient: string
+  recipient: string,
 ): Promise<boolean> {
   try {
     const payload: NearAuthPayload = {
@@ -118,7 +120,7 @@ export async function verifySignature(
 
     return nacl.sign.detached.verify(payloadHash, signature, publicKey);
   } catch (error) {
-    console.error('Error verifying signature:', error);
+    console.error("Error verifying signature:", error);
     return false;
   }
 }

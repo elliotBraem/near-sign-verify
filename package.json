@@ -20,6 +20,8 @@
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "lint": "eslint src --ext .ts",
+    "fmt": "prettier --write '**/*.{js,jsx,ts,tsx,json}'",
+    "fmt:check": "prettier --check '**/*.{js,jsx,ts,tsx,json}'",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
     "test": "vitest run",
@@ -38,6 +40,7 @@
   "dependencies": {
     "borsh": "^2.0.0",
     "bs58": "^5.0.0",
+    "prettier": "^3.5.3",
     "tweetnacl": "^1.0.3",
     "zod": "^3.24.2"
   },

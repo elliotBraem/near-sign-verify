@@ -1,8 +1,4 @@
 /**
- * Encoding utilities for NEAR Simple Signing
- */
-
-/**
  * Convert a string to Uint8Array
  * @param str String to convert
  * @returns Uint8Array

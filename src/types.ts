@@ -1,8 +1,4 @@
-/**
- * Types for NEAR Simple Signing
- */
-
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * NEAR Authentication Data Schema
@@ -39,12 +35,12 @@ export const NearAuthDataSchema = z.object({
   recipient: z.string(),
 
   /**
-   * Callback URL
+   * Callback URL (for usage by backend)
    */
   callback_url: z.string().optional(),
 
   /**
-   * Optional state parameter
+   * Optional state parameter (comes from signature, might be useful)
    */
   state: z.string().optional(),
 });
@@ -59,7 +55,7 @@ export type NearAuthData = z.infer<typeof NearAuthDataSchema>;
  */
 export const NearAuthPayloadSchema = z.object({
   /**
-   * Tag value for the payload (2147484061)
+   * Tag value for the payload (2147484061), idk what this means yet, it's straight from nearai
    */
   tag: z.number(),
 
@@ -79,12 +75,12 @@ export const NearAuthPayloadSchema = z.object({
   receiver: z.string(),
 
   /**
-   * Callback URL
+   * Callback URL (for usage by backend)
    */
   callback_url: z.string().optional(),
 
   /**
-   * Optional state parameter
+   * Optional state parameter (comes from signature, might be useful)
    */
   state: z.string().optional(),
 });

@@ -1,19 +1,17 @@
-/**
- * Signature validation for NEAR Simple Signing
- */
-
-import bs58 from 'bs58';
-import { base64ToUint8Array } from '../utils/encoding.js';
-import { validateNonce } from '../utils/nonce.js';
-import { ED25519_PREFIX, padNonce, verifySignature } from '../crypto/crypto.js';
-import type { ValidationResult, NearAuthData } from '../types.js';
+import bs58 from "bs58";
+import { base64ToUint8Array } from "../utils/encoding.js";
+import { validateNonce } from "../utils/nonce.js";
+import { ED25519_PREFIX, padNonce, verifySignature } from "../crypto/crypto.js";
+import type { ValidationResult, NearAuthData } from "../types.js";
 
 /**
  * Validate a NEAR signature
  * @param authData NEAR authentication data
  * @returns Validation result
  */
-export async function validateSignature(authData: NearAuthData): Promise<ValidationResult> {
+export async function validateSignature(
+  authData: NearAuthData,
+): Promise<ValidationResult> {
   const {
     signature,
     message,
@@ -47,23 +45,29 @@ export async function validateSignature(authData: NearAuthData): Promise<Validat
         signatureBytes,
         publicKeyBytes,
         nonceBytes,
-        recipient
+        recipient,
       );
 
       return {
         valid: isValid,
-        error: isValid ? undefined : 'Invalid signature',
+        error: isValid ? undefined : "Invalid signature",
       };
     } catch (error) {
       return {
         valid: false,
-        error: error instanceof Error ? error.message : 'Unknown error validating signature',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown error validating signature",
       };
     }
   } catch (error) {
     return {
       valid: false,
-      error: error instanceof Error ? error.message : 'Unknown error validating signature',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unknown error validating signature",
     };
   }
 }
