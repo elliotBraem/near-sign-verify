@@ -1,7 +1,7 @@
 {
   "name": "near-sign-verify",
   "version": "0.1.0",
-  "description": "NEAR wallet signature generation utility for API authentication",
+  "description": "Creates and validates NEAR signatures for API authentication.",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

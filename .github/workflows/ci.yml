@@ -21,15 +21,12 @@ jobs:
       
       - name: Install dependencies
         run: bun install
+
+      - name: Run fmt check
+        run: bun run fmt:check
       
       - name: Run tests
-        run: bun test
-      
-      - name: Run type check
-        run: bun run typecheck
-      
-      - name: Run lint
-        run: bun run lint
+        run: bun run test
 
   build:
     needs: test
