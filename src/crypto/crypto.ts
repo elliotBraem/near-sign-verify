@@ -4,7 +4,7 @@ import type { NearAuthPayload } from "../types.js";
 import { stringToUint8Array } from "../utils/encoding.js";
 
 export const ED25519_PREFIX = "ed25519:";
-export const TAG = 2147484061; // this came from nearai, idk what it means
+export const TAG = 2147484061;
 
 /**
  * Pad a nonce to 32 bytes

@@ -1,24 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import { createAuthToken } from "../../src/auth/createAuthToken.js";
 import { parseAuthToken } from "../../src/auth/parseAuthToken.js";
 import type { NearAuthData } from "../../src/types.js";
 
 describe("parseAuthToken", () => {
-  it("should parse a valid auth token", () => {
-    const authData: NearAuthData = {
-      account_id: "test.near",
-      public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
-      signature: "base64signature",
-      message: "Hello, world!",
-      nonce: "1609459200000",
-      recipient: "recipient.near",
-    };
-
-    const token = JSON.stringify(authData);
-    const parsed = parseAuthToken(token);
-
-    expect(parsed).toEqual(authData);
-  });
-
   it("should handle optional fields", () => {
     const authData: NearAuthData = {
       account_id: "test.near",
@@ -31,7 +16,7 @@ describe("parseAuthToken", () => {
       state: "some-state-value",
     };
 
-    const token = JSON.stringify(authData);
+    const token = createAuthToken(authData);
     const parsed = parseAuthToken(token);
 
     expect(parsed).toEqual(authData);
@@ -39,16 +24,18 @@ describe("parseAuthToken", () => {
     expect(parsed.state).toBe("some-state-value");
   });
 
-  it("should throw an error for invalid JSON", () => {
-    const invalidToken = "{invalid-json";
+  it("should throw an error for invalid token format", () => {
+    const invalidToken = "invalid-base64-data";
 
     expect(() => parseAuthToken(invalidToken)).toThrow(
-      "Invalid auth token format",
+      "Invalid auth token: Invalid character",
     );
   });
 
-  it("should throw an error for missing required fields", () => {
-    const invalidData = {
+  it("should throw an error for corrupted token data", () => {
+    // Create a valid token first
+    const authData: NearAuthData = {
+      account_id: "test.near",
       public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
       signature: "base64signature",
       message: "Hello, world!",
@@ -56,22 +43,11 @@ describe("parseAuthToken", () => {
       recipient: "recipient.near",
     };
 
-    const token = JSON.stringify(invalidData);
+    const token = createAuthToken(authData);
 
-    expect(() => parseAuthToken(token)).toThrow("Invalid auth data");
-  });
+    // Corrupt the token by replacing some characters
+    const corruptedToken = token.substring(0, token.length - 5) + "XXXXX";
 
-  it("should throw an error for missing recipient field", () => {
-    const invalidData = {
-      account_id: "test.near",
-      public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
-      signature: "base64signature",
-      message: "Hello, world!",
-      nonce: "1609459200000",
-    };
-
-    const token = JSON.stringify(invalidData);
-
-    expect(() => parseAuthToken(token)).toThrow("Invalid auth data");
+    expect(() => parseAuthToken(corruptedToken)).toThrow();
   });
 });

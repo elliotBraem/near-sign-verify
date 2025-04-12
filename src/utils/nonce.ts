@@ -1,11 +1,13 @@
 import type { ValidationResult } from "../types.js";
+import { uint8ArrayToBase64 } from "./encoding.js";
 
 /**
  * Generate a nonce for signing
  * @returns A nonce string
  */
 export function generateNonce(): string {
-  return Date.now().toString();
+  const randomBytes = crypto.getRandomValues(new Uint8Array(16));
+  return uint8ArrayToBase64(randomBytes);
 }
 
 /**
@@ -15,22 +17,9 @@ export function generateNonce(): string {
  */
 export function validateNonce(nonce: string): ValidationResult {
   try {
-    // Convert to timestamp and validate
-    const nonceInt = parseInt(nonce);
-    const now = Date.now();
-
-    if (isNaN(nonceInt)) {
+    // Check if nonce has proper format
+    if (!/^[A-Za-z0-9+/=]+$/.test(nonce)) {
       return { valid: false, error: "Invalid nonce format" };
-    }
-
-    if (nonceInt > now) {
-      return { valid: false, error: "Nonce is in the future" };
-    }
-
-    // If the timestamp is older than 10 years, it is considered invalid
-    // This forces apps to use unique nonces
-    if (now - nonceInt > 10 * 365 * 24 * 60 * 60 * 1000) {
-      return { valid: false, error: "Nonce is too old" };
     }
 
     return { valid: true };

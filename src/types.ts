@@ -37,12 +37,12 @@ export const NearAuthDataSchema = z.object({
   /**
    * Callback URL (for usage by backend)
    */
-  callback_url: z.string().optional(),
+  callback_url: z.string().nullable().optional(),
 
   /**
    * Optional state parameter (comes from signature, might be useful)
    */
-  state: z.string().optional(),
+  state: z.string().nullable().optional(),
 });
 
 /**
@@ -55,7 +55,7 @@ export type NearAuthData = z.infer<typeof NearAuthDataSchema>;
  */
 export const NearAuthPayloadSchema = z.object({
   /**
-   * Tag value for the payload (2147484061), idk what this means yet, it's straight from nearai
+   * Tag value for the payload (2147484061)
    */
   tag: z.number(),
 
