@@ -1,82 +1,86 @@
-# near-simple-signing
+# near-sign-verify
 
-NEAR wallet signature generation and validation utility for API authentication.
-
-## Overview
-
-This package provides a simple way to create and validate NEAR wallet signatures for authentication with APIs. It works in both browser and server environments, and is compatible with Node.js, browsers, and Deno.
-
-## Features
-
-- Create properly formatted authentication headers
-- Validate signatures
-- Generate and validate nonces
-- Environment-agnostic implementation (works in browsers, Node.js, and Deno)
-- No dependencies on near-api-js
-
-## Installation
+Creates and validates NEAR wallet signatures for API authentication.
 
 ```bash
-# Using npm
-npm install near-simple-signing
-
-# Using yarn
-yarn add near-simple-signing
-
-# Using pnpm
-pnpm add near-simple-signing
-
-# Using bun
-bun add near-simple-signing
+npm install near-sign-verify
 ```
 
 ## Usage
 
-### Creating an Authentication Header
+### Create Auth Data
 
 ```typescript
-import { createAuthHeader } from 'near-simple-signing';
+import { createAuthToken } from 'near-sign-verify';
 
-// Create an auth header from signature data
-const authHeader = createAuthHeader({
-  account_id: 'your-account.near',
-  public_key: 'ed25519:your-public-key',
-  signature: 'your-signature',
-  message: 'message-that-was-signed',
-  nonce: 'your-nonce',
-  recipient: 'api.example.com',
+const authToken = createAuthToken({
+  account_id: 'you.near',
+  public_key: 'ed25519:pubkey',
+  signature: 'sig',
+  message: 'msg',
+  nonce: 'nonce',
+  recipient: 'recipient.near',
 });
 
-// Use the auth header in your API requests
 fetch('https://api.example.com/endpoint', {
-  headers: {
-    'Authorization': `NEAR ${authHeader}`,
-  },
+  headers: { 'Authorization': `Bearer ${authToken}` },
 });
 ```
 
-### Validating a Signature
+### Validate Signature
 
 ```typescript
-import { validateSignature } from 'near-simple-signing';
+import { validateSignature } from 'near-sign-verify';
 
-// Validate a signature
-const result = await validateSignature({
-  signature: 'signature-to-validate',
-  message: 'message-that-was-signed',
-  publicKey: 'ed25519:public-key',
-  nonce: 'nonce-used-for-signing',
-  recipient: 'api.example.com',
+const isValid = await validateSignature({
+  signature: 'sig-to-validate',
+  message: 'signed-message',
+  publicKey: 'ed25519:pubkey',
+  nonce: 'nonce',
+  recipient: 'recipient.near',
 });
-
-if (result.valid) {
-  console.log('Signature is valid');
-} else {
-  console.error('Signature is invalid:', result.error);
-}
 ```
 
-### Utility Functions
+### Complete Flow
+
+```typescript
+import { generateNonce, createAuthToken, validateSignature } from 'near-sign-verify';
+
+// Client: Generate nonce & sign
+const nonce = generateNonce();
+const message = JSON.stringify({
+  nonce,
+  recipient: 'recipient.near',
+  timestamp: Date.now(),
+});
+
+const signed = await nearWallet.signMessage(message);
+
+// Create token & send request
+const authToken = createAuthToken({
+  account_id: 'you.near',
+  public_key: signed.publicKey,
+  signature: signed.signature,
+  message,
+  nonce,
+  recipient: 'recipient.near',
+});
+
+fetch('https://api.example.com/endpoint', {
+  headers: { 'Authorization': `Bearer ${authToken}` },
+});
+
+// Server: Validate
+const isValid = await validateSignature({
+  signature: signed.signature,
+  message,
+  publicKey: signed.publicKey,
+  nonce,
+  recipient: 'recipient.near',
+});
+```
+
+### Utils
 
 ```typescript
 import {
@@ -86,63 +90,8 @@ import {
   uint8ArrayToString,
   base64ToUint8Array,
   uint8ArrayToBase64,
-} from 'near-simple-signing';
-
-// Generate a nonce
-const nonce = generateNonce();
-
-// Validate a nonce
-const nonceValidation = validateNonce(nonce);
-
-// Convert between different formats
-const uint8Array = stringToUint8Array('Hello, world!');
-const string = uint8ArrayToString(uint8Array);
-const base64 = uint8ArrayToBase64(uint8Array);
-const backToUint8Array = base64ToUint8Array(base64);
+} from 'near-sign-verify';
 ```
-
-## API Reference
-
-### `createAuthHeader(authData)`
-
-Creates an authentication header for API requests.
-
-**Parameters:**
-- `authData`: An object containing:
-  - `account_id`: NEAR account ID
-  - `public_key`: Public key used for signing
-  - `signature`: Signature of the message
-  - `message`: Message that was signed
-  - `nonce`: Nonce used for signing
-  - `recipient` (optional): Recipient of the message
-  - `callback_url` (optional): Callback URL
-
-**Returns:** A string containing the authentication header.
-
-### `validateSignature(params)`
-
-Validates a signature.
-
-**Parameters:**
-- `params`: An object containing:
-  - `signature`: Signature to validate
-  - `message`: Message that was signed
-  - `publicKey`: Public key to validate against
-  - `nonce`: Nonce used for signing
-  - `recipient` (optional): Recipient of the message
-
-**Returns:** A promise that resolves to a validation result object with:
-- `valid`: Whether the signature is valid
-- `error` (optional): Error message if invalid
-
-### Utility Functions
-
-- `generateNonce()`: Generates a nonce for signing
-- `validateNonce(nonce)`: Validates a nonce
-- `stringToUint8Array(str)`: Converts a string to Uint8Array
-- `uint8ArrayToString(arr)`: Converts a Uint8Array to string
-- `base64ToUint8Array(base64)`: Converts a base64 string to Uint8Array
-- `uint8ArrayToBase64(arr)`: Converts a Uint8Array to base64 string
 
 ## License
 

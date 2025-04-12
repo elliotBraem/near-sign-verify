@@ -5,10 +5,10 @@
 import type { NearAuthData } from '../types.js';
 
 /**
- * Create a properly formatted auth header for API authentication
+ * Create properly formatted auth token for API authentication
  * @param authData NEAR authentication data
- * @returns Auth header string
+ * @returns Auth token string
  */
-export function createAuthHeader(authData: NearAuthData): string {
+export function createAuthToken(authData: NearAuthData): string {
   return JSON.stringify(authData);
 }

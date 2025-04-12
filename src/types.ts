@@ -2,117 +2,114 @@
  * Types for NEAR Simple Signing
  */
 
+import { z } from 'zod';
+
 /**
- * NEAR Authentication Data
+ * NEAR Authentication Data Schema
  */
-export interface NearAuthData {
+export const NearAuthDataSchema = z.object({
   /**
    * NEAR account ID
    */
-  account_id: string;
+  account_id: z.string(),
 
   /**
    * Public key used for signing
    */
-  public_key: string;
+  public_key: z.string(),
 
   /**
    * Signature of the message
    */
-  signature: string;
+  signature: z.string(),
 
   /**
    * Message that was signed
    */
-  message: string;
+  message: z.string(),
 
   /**
    * Nonce used for signing
    */
-  nonce: string;
+  nonce: z.string(),
 
   /**
    * Recipient of the message
    */
-  recipient?: string;
+  recipient: z.string(),
 
   /**
    * Callback URL
    */
-  callback_url?: string;
-}
+  callback_url: z.string().optional(),
+
+  /**
+   * Optional state parameter
+   */
+  state: z.string().optional(),
+});
+
+/**
+ * NEAR Authentication Data
+ */
+export type NearAuthData = z.infer<typeof NearAuthDataSchema>;
+
+/**
+ * NEAR Authentication Payload Schema
+ */
+export const NearAuthPayloadSchema = z.object({
+  /**
+   * Tag value for the payload (2147484061)
+   */
+  tag: z.number(),
+
+  /**
+   * Message that was signed
+   */
+  message: z.string(),
+
+  /**
+   * Nonce used for signing
+   */
+  nonce: z.instanceof(Uint8Array),
+
+  /**
+   * Recipient of the message
+   */
+  receiver: z.string(),
+
+  /**
+   * Callback URL
+   */
+  callback_url: z.string().optional(),
+
+  /**
+   * Optional state parameter
+   */
+  state: z.string().optional(),
+});
 
 /**
  * NEAR Authentication Payload
  */
-export interface NearAuthPayload {
-  /**
-   * Tag value for the payload (2147484061)
-   */
-  tag: number;
-
-  /**
-   * Message that was signed
-   */
-  message: string;
-
-  /**
-   * Nonce used for signing
-   */
-  nonce: Uint8Array;
-
-  /**
-   * Recipient of the message
-   */
-  receiver: string;
-
-  /**
-   * Callback URL
-   */
-  callback_url?: string;
-}
+export type NearAuthPayload = z.infer<typeof NearAuthPayloadSchema>;
 
 /**
- * Signature validation parameters
+ * Validation result schema
  */
-export interface ValidateSignatureParams {
-  /**
-   * Signature to validate
-   */
-  signature: string;
-
-  /**
-   * Message that was signed
-   */
-  message: string;
-
-  /**
-   * Public key to validate against
-   */
-  publicKey: string;
-
-  /**
-   * Nonce used for signing
-   */
-  nonce: string;
-
-  /**
-   * Recipient of the message
-   */
-  recipient: string;
-}
-
-/**
- * Validation result
- */
-export interface ValidationResult {
+export const ValidationResultSchema = z.object({
   /**
    * Whether the signature is valid
    */
-  valid: boolean;
+  valid: z.boolean(),
 
   /**
    * Error message if invalid
    */
-  error?: string;
-}
+  error: z.string().optional(),
+});
+
+/**
+ * Validation result
+ */
+export type ValidationResult = z.infer<typeof ValidationResultSchema>;

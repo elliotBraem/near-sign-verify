@@ -6,22 +6,22 @@ import bs58 from 'bs58';
 import { base64ToUint8Array } from '../utils/encoding.js';
 import { validateNonce } from '../utils/nonce.js';
 import { ED25519_PREFIX, padNonce, verifySignature } from '../crypto/crypto.js';
-import type { ValidationResult, ValidateSignatureParams } from '../types.js';
+import type { ValidationResult, NearAuthData } from '../types.js';
 
 /**
  * Validate a NEAR signature
- * @param params Validation parameters
+ * @param authData NEAR authentication data
  * @returns Validation result
  */
-export async function validateSignature({
-  signature,
-  message,
-  publicKey,
-  nonce,
-  recipient,
-}: ValidateSignatureParams): Promise<ValidationResult> {
+export async function validateSignature(authData: NearAuthData): Promise<ValidationResult> {
+  const {
+    signature,
+    message,
+    public_key: publicKey,
+    nonce,
+    recipient,
+  } = authData;
   try {
-    // Validate nonce
     const nonceValidation = validateNonce(nonce);
     if (!nonceValidation.valid) {
       return nonceValidation;
@@ -42,7 +42,6 @@ export async function validateSignature({
     const publicKeyBytes = bs58.decode(publicKeyString);
 
     try {
-      // Verify the signature
       const isValid = await verifySignature(
         message,
         signatureBytes,

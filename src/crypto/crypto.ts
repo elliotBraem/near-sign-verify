@@ -12,7 +12,6 @@ export const TAG = 2147484061; // this came from nearai, idk what it means
  * @returns Padded nonce as Uint8Array
  */
 export function padNonce(nonce: string): Uint8Array {
-  // Convert nonce to a proper format (padded to 32 bytes)
   const paddedNonce = nonce.padStart(32, '0');
   return stringToUint8Array(paddedNonce);
 }
@@ -23,7 +22,6 @@ export function padNonce(nonce: string): Uint8Array {
  * @returns Serialized payload as Uint8Array
  */
 export function serializePayload(payload: NearAuthPayload): Uint8Array {
-  // Create a properly formatted payload object
   const borshPayload = {
     tag: payload.tag,
     message: payload.message,
@@ -32,18 +30,17 @@ export function serializePayload(payload: NearAuthPayload): Uint8Array {
     callback_url: payload.callback_url || null,
   };
 
-  // Define the schema for borsh
+  // Can we sync this borsch schema with rust types?
   const schema = {
     struct: {
       tag: 'u32',
       message: 'string',
-      nonce: { array: { type: 'u8', len: 32 } }, // Fixed-length array of 32 bytes
+      nonce: { array: { type: 'u8', len: 32 } },
       receiver: 'string',
       callback_url: { option: 'string' },
     },
   };
 
-  // Serialize using borsh
   return borsh.serialize(schema, borshPayload);
 }
 
@@ -83,8 +80,7 @@ export async function hashPayload(payload: Uint8Array): Promise<Uint8Array> {
  * @returns Hashed payload as Uint8Array
  */
 function fallbackHash(payload: Uint8Array): Uint8Array {
-  // This is a very simple hash function and should not be used in production
-  // It's only here as a last resort fallback
+  // let's find a solution to delete this fallback
   const result = new Uint8Array(32);
   for (let i = 0; i < payload.length; i++) {
     result[i % 32] = (result[i % 32] + payload[i]) % 256;
@@ -109,21 +105,17 @@ export async function verifySignature(
   recipient: string
 ): Promise<boolean> {
   try {
-    // Create payload
     const payload: NearAuthPayload = {
       tag: TAG,
       message,
-      nonce,
+      nonce: new Uint8Array(nonce),
       receiver: recipient,
     };
 
-    // Serialize payload
     const serializedPayload = serializePayload(payload);
 
-    // Hash the payload
     const payloadHash = await hashPayload(serializedPayload);
 
-    // Verify the signature
     return nacl.sign.detached.verify(payloadHash, signature, publicKey);
   } catch (error) {
     console.error('Error verifying signature:', error);
