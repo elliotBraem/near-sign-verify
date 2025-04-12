@@ -1,0 +1,55 @@
+{
+  "name": "near-simple-signing",
+  "version": "0.1.0",
+  "description": "NEAR wallet signature generation utility for API authentication",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "bun run clean && bun run build && bun run test"
+  },
+  "keywords": [
+    "near",
+    "wallet",
+    "signature",
+    "authentication"
+  ],
+  "author": "elliotBraem",
+  "license": "MIT",
+  "dependencies": {
+    "borsh": "^2.0.0",
+    "bs58": "^5.0.0",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@vitest/coverage-v8": "^1.2.1",
+    "eslint": "^8.56.0",
+    "rimraf": "^5.0.5",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
