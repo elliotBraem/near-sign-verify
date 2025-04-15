@@ -7,16 +7,6 @@ export const ED25519_PREFIX = "ed25519:";
 export const TAG = 2147484061;
 
 /**
- * Pad a nonce to 32 bytes
- * @param nonce Nonce string
- * @returns Padded nonce as Uint8Array
- */
-export function padNonce(nonce: string): Uint8Array {
-  const paddedNonce = nonce.padStart(32, "0");
-  return stringToUint8Array(paddedNonce);
-}
-
-/**
  * Serialize a payload using Borsh
  * @param payload Payload to serialize
  * @returns Serialized payload as Uint8Array
@@ -95,7 +85,7 @@ function fallbackHash(payload: Uint8Array): Uint8Array {
  * @param message The message that was signed
  * @param signature The signature to verify
  * @param publicKey The public key to verify against
- * @param nonce The nonce used for signing
+ * @param nonce The 32-byte nonce used for signing
  * @param recipient The recipient of the message
  * @returns Whether the signature is valid
  */

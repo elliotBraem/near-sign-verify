@@ -21,14 +21,13 @@ describe("validateSignature", () => {
 
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
 
-    vi.spyOn(cryptoModule, "padNonce").mockReturnValue(new Uint8Array(32));
-
+    const testNonce = new Uint8Array(32);
     const authData: NearAuthData = {
       account_id: "test.near",
       public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
       signature: "base64signature",
       message: "Hello, world!",
-      nonce: "1609459200000",
+      nonce: testNonce,
       recipient: "recipient.near",
     };
 
@@ -37,8 +36,7 @@ describe("validateSignature", () => {
     expect(result.valid).toBe(true);
     expect(result.error).toBeUndefined();
 
-    expect(nonceModule.validateNonce).toHaveBeenCalledWith("1609459200000");
-    expect(cryptoModule.padNonce).toHaveBeenCalledWith("1609459200000");
+    expect(nonceModule.validateNonce).toHaveBeenCalledWith(testNonce);
     expect(cryptoModule.verifySignature).toHaveBeenCalled();
   });
 
@@ -47,14 +45,13 @@ describe("validateSignature", () => {
 
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(false);
 
-    vi.spyOn(cryptoModule, "padNonce").mockReturnValue(new Uint8Array(32));
-
+    const testNonce = new Uint8Array(32);
     const authData: NearAuthData = {
       account_id: "test.near",
       public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
       signature: "invalidsignature",
       message: "Hello, world!",
-      nonce: "1609459200000",
+      nonce: testNonce,
       recipient: "recipient.near",
     };
 
@@ -75,7 +72,7 @@ describe("validateSignature", () => {
       public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
       signature: "base64signature",
       message: "Hello, world!",
-      nonce: "invalid-nonce",
+      nonce: new Uint8Array(16), // Invalid length for testing
       recipient: "recipient.near",
     };
 
@@ -94,14 +91,13 @@ describe("validateSignature", () => {
       new Error("Test error"),
     );
 
-    vi.spyOn(cryptoModule, "padNonce").mockReturnValue(new Uint8Array(32));
-
+    const testNonce = new Uint8Array(32);
     const authData: NearAuthData = {
       account_id: "test.near",
       public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
       signature: "base64signature",
       message: "Hello, world!",
-      nonce: "1609459200000",
+      nonce: testNonce,
       recipient: "recipient.near",
     };
 

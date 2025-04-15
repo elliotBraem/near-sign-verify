@@ -1,7 +1,7 @@
 import bs58 from "bs58";
 import { base64ToUint8Array } from "../utils/encoding.js";
 import { validateNonce } from "../utils/nonce.js";
-import { ED25519_PREFIX, padNonce, verifySignature } from "../crypto/crypto.js";
+import { ED25519_PREFIX, verifySignature } from "../crypto/crypto.js";
 import type { ValidationResult, NearAuthData } from "../types.js";
 
 /**
@@ -25,9 +25,6 @@ export async function validateSignature(
       return nonceValidation;
     }
 
-    // Pad the nonce to 32 bytes
-    const nonceBytes = padNonce(nonce);
-
     // Decode the signature
     const signatureBytes = base64ToUint8Array(signature);
 
@@ -44,7 +41,7 @@ export async function validateSignature(
         message,
         signatureBytes,
         publicKeyBytes,
-        nonceBytes,
+        nonce,
         recipient,
       );
 
