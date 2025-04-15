@@ -9,14 +9,17 @@ npm install near-sign-verify
 ```typescript
 import { generateNonce, createAuthToken, validateSignature } from 'near-sign-verify';
 
-// Generate nonce & sign
+// Generate nonce
 const nonce = generateNonce(); // basic random number
+
+// Write message
 const message = JSON.stringify({
   nonce,
   recipient: 'them.near',
   timestamp: Date.now(),
 });
 
+// Sign
 const signed = await nearWallet.signMessage(message);
 
 // Create token

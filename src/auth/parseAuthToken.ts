@@ -1,6 +1,10 @@
 import * as borsh from "borsh";
 import { z } from "zod";
-import { NearAuthDataSchema, type NearAuthData } from "../types.js";
+import {
+  NearAuthDataSchema,
+  type NearAuthData,
+  type BorshNearAuthData,
+} from "../types.js";
 import { base64ToUint8Array } from "../utils/encoding.js";
 import { createValidationErrorMessage } from "../utils/validation.js";
 import { nearAuthDataBorshSchema } from "./authTokenSchema.js";
@@ -13,40 +17,29 @@ import { nearAuthDataBorshSchema } from "./authTokenSchema.js";
  */
 export function parseAuthToken(authToken: string): NearAuthData {
   try {
-    // Convert from Base64 to Uint8Array
+    // Convert from Base64 and deserialize using Borsh
     const serialized = base64ToUint8Array(authToken);
+    const deserialized = borsh.deserialize(
+      nearAuthDataBorshSchema,
+      serialized,
+    ) as BorshNearAuthData;
 
-    try {
-      // Deserialize using Borsh
-      const deserialized = borsh.deserialize(
-        nearAuthDataBorshSchema,
-        serialized,
-      );
-
-      try {
-        // Validate with Zod schema
-        return NearAuthDataSchema.parse(deserialized);
-      } catch (validationError) {
-        if (validationError instanceof z.ZodError) {
-          throw new Error(
-            `Invalid auth data: ${createValidationErrorMessage(validationError)}`,
-          );
-        }
-        throw validationError;
-      }
-    } catch (borshError) {
-      const errorMessage =
-        borshError instanceof Error ? borshError.message : String(borshError);
-      throw new Error(
-        `Invalid auth token format: Borsh deserialization failed - ${errorMessage}`,
-      );
+    if (!deserialized) {
+      throw new Error("Deserialization failed: null result");
     }
+
+    // Validate and transform with Zod schema (handles nonce conversion)
+    return NearAuthDataSchema.parse(deserialized);
   } catch (error) {
-    if (error instanceof Error && error.message.includes("Invalid character")) {
-      throw new Error(`Invalid auth token: ${error.message}`);
+    if (error instanceof z.ZodError) {
+      throw new Error(
+        `Invalid auth data: ${createValidationErrorMessage(error)}`,
+      );
     }
     if (error instanceof Error) {
-      throw error; // Re-throw errors we've already formatted
+      throw new Error(
+        `Invalid auth token: ${error.message.replace(/^Error: /, "")}`,
+      );
     }
     throw new Error(`Invalid auth token: ${String(error)}`);
   }

@@ -1,8 +1,19 @@
 import { z } from "zod";
 
 /**
- * NEAR Authentication Data Schema
+ * Type for raw deserialized Borsh data
  */
+export interface BorshNearAuthData {
+  account_id: string;
+  public_key: string;
+  signature: string;
+  message: string;
+  nonce: number[];
+  recipient: string;
+  callback_url: string | null;
+  state: string | null;
+}
+
 export const NearAuthDataSchema = z.object({
   /**
    * NEAR account ID
@@ -27,7 +38,10 @@ export const NearAuthDataSchema = z.object({
   /**
    * Nonce used for signing
    */
-  nonce: z.string(),
+  nonce: z.union([
+    z.instanceof(Uint8Array),
+    z.array(z.number()).transform((arr) => new Uint8Array(arr)),
+  ]),
 
   /**
    * Recipient of the message

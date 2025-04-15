@@ -9,7 +9,7 @@ export const nearAuthDataBorshSchema = {
     public_key: "string",
     signature: "string",
     message: "string",
-    nonce: "string",
+    nonce: { array: { type: "u8", len: 32 } },
     recipient: "string",
     callback_url: { option: "string" },
     state: { option: "string" },

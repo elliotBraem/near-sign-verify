@@ -10,7 +10,7 @@ describe("parseAuthToken", () => {
       public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
       signature: "base64signature",
       message: "Hello, world!",
-      nonce: "1609459200000",
+      nonce: new Uint8Array(32).fill(0),
       recipient: "recipient.near",
       callback_url: "https://example.com/callback",
       state: "some-state-value",
@@ -39,7 +39,7 @@ describe("parseAuthToken", () => {
       public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
       signature: "base64signature",
       message: "Hello, world!",
-      nonce: "1609459200000",
+      nonce: new Uint8Array(32).fill(0),
       recipient: "recipient.near",
     };
 
