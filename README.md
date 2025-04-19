@@ -10,7 +10,7 @@ npm install near-sign-verify
 import { generateNonce, createAuthToken, validateSignature } from 'near-sign-verify';
 
 // Generate nonce
-const nonce = generateNonce(); // basic random number
+const nonce = generateNonce(); // timestamp-based
 
 // Write message
 const message = JSON.stringify({
