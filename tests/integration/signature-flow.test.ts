@@ -28,10 +28,14 @@ describe("NEAR Signature Flow Integration Test", () => {
     const fcakSecretKey = process.env.FCAK_SECRET_KEY!;
 
     if (!fakSecretKey) {
-      throw new Error("FAK_SECRET_KEY not found in environment variables. Please ensure .env file is set up correctly and contains FAK_SECRET_KEY.");
+      throw new Error(
+        "FAK_SECRET_KEY not found in environment variables. Please ensure .env file is set up correctly and contains FAK_SECRET_KEY.",
+      );
     }
     if (!fcakSecretKey) {
-      throw new Error("FCAK_SECRET_KEY not found in environment variables. Please ensure .env file is set up correctly and contains FCAK_SECRET_KEY.");
+      throw new Error(
+        "FCAK_SECRET_KEY not found in environment variables. Please ensure .env file is set up correctly and contains FCAK_SECRET_KEY.",
+      );
     }
 
     FAK_KEY_PAIR = near.KeyPair.fromString(fakSecretKey as KeyPairString);
@@ -41,11 +45,18 @@ describe("NEAR Signature Flow Integration Test", () => {
       throw new Error("Provided FAK_SECRET_KEY does not match FAK_PUBLIC_KEY.");
     }
     if (FCAK_KEY_PAIR.getPublicKey().toString() !== FCAK_PUBLIC_KEY) {
-      throw new Error("Provided FCAK_SECRET_KEY does not match FCAK_PUBLIC_KEY.");
+      throw new Error(
+        "Provided FCAK_SECRET_KEY does not match FCAK_PUBLIC_KEY.",
+      );
     }
   });
 
-  const createTestPayload = (message: string, nonce: Uint8Array, recipient: string, callback_url: string | null = null) => {
+  const createTestPayload = (
+    message: string,
+    nonce: Uint8Array,
+    recipient: string,
+    callback_url: string | null = null,
+  ) => {
     return {
       tag: TAG,
       message,
@@ -96,7 +107,9 @@ describe("NEAR Signature Flow Integration Test", () => {
     const validationResult = await verify(authData);
 
     expect(validationResult.valid).toBe(false);
-    expect(validationResult.error).toBe("Public key does not belong to the specified account or does not meet access requirements.");
+    expect(validationResult.error).toBe(
+      "Public key does not belong to the specified account or does not meet access requirements.",
+    );
   });
 
   it("should succeed when using FAK for signverifytests.testnet and requireFullAccessKey: true", async () => {
@@ -124,7 +137,7 @@ describe("NEAR Signature Flow Integration Test", () => {
 
     expect(validationResult.valid).toBe(true);
   });
-  
+
   it("should fail when using FCAK for signverifytests.testnet and requireFullAccessKey: true", async () => {
     const message = "Test with FCAK, requireFullAccessKey=true";
     const nonce = generateNonce();
@@ -145,12 +158,14 @@ describe("NEAR Signature Flow Integration Test", () => {
       account_id: SIGNVERIFYTESTS_ACCOUNT_ID,
       public_key: FCAK_PUBLIC_KEY,
     };
-    
+
     const options: VerifyOptions = { requireFullAccessKey: true };
     const validationResult = await verify(authData, options);
-    
+
     expect(validationResult.valid).toBe(false);
-    expect(validationResult.error).toBe("Public key does not belong to the specified account or does not meet access requirements.");
+    expect(validationResult.error).toBe(
+      "Public key does not belong to the specified account or does not meet access requirements.",
+    );
   });
 
   it("should succeed when using FCAK for signverifytests.testnet and requireFullAccessKey: false", async () => {
@@ -173,10 +188,10 @@ describe("NEAR Signature Flow Integration Test", () => {
       account_id: SIGNVERIFYTESTS_ACCOUNT_ID,
       public_key: FCAK_PUBLIC_KEY,
     };
-    
+
     const options: VerifyOptions = { requireFullAccessKey: false };
     const validationResult = await verify(authData, options);
-    
+
     expect(validationResult.valid).toBe(true);
   });
 
@@ -201,13 +216,15 @@ describe("NEAR Signature Flow Integration Test", () => {
       recipient,
       callback_url: "",
       signature: uint8ArrayToBase64(signedMessage.signature),
-      account_id: namedAccountId, 
+      account_id: namedAccountId,
       public_key: randomPublicKey,
     };
 
     const validationResult = await verify(authData);
 
     expect(validationResult.valid).toBe(false);
-    expect(validationResult.error).toBe("Public key does not belong to the specified account or does not meet access requirements.");
+    expect(validationResult.error).toBe(
+      "Public key does not belong to the specified account or does not meet access requirements.",
+    );
   });
 });

@@ -116,9 +116,7 @@ export async function verify(
 
       return {
         valid: isValidCryptoSignature,
-        error: isValidCryptoSignature
-          ? undefined
-          : "Invalid signature",
+        error: isValidCryptoSignature ? undefined : "Invalid signature",
       };
     } catch (error) {
       return {

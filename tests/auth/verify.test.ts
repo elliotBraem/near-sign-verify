@@ -43,7 +43,10 @@ describe("verify", () => {
 
     expect(result.valid).toBe(true);
     expect(result.error).toBeUndefined();
-    expect(nonceModule.validateNonce).toHaveBeenCalledWith(baseAuthData.nonce, undefined); // No nonceMaxAge passed
+    expect(nonceModule.validateNonce).toHaveBeenCalledWith(
+      baseAuthData.nonce,
+      undefined,
+    ); // No nonceMaxAge passed
     expect(fetch).toHaveBeenCalledWith(
       `https://test.api.fastnear.com/v0/public_key/${baseAuthData.public_key}`, // Default requireFullAccessKey=true
     );
@@ -66,7 +69,9 @@ describe("verify", () => {
   });
 
   it("should reject if FastNEAR API request fails (network error)", async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("Network failure"));
+    (fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("Network failure"),
+    );
 
     const result = await verify(baseAuthData);
 
@@ -168,7 +173,7 @@ describe("verify", () => {
     expect(result.valid).toBe(false);
     expect(result.error).toBe("Crypto error");
   });
-  
+
   it("should pass nonceMaxAge to validateNonce if provided", async () => {
     const nonceMaxAge = 5 * 60 * 1000; // 5 minutes
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
@@ -180,7 +185,10 @@ describe("verify", () => {
     const result = await verify(baseAuthData, { nonceMaxAge });
 
     expect(result.valid).toBe(true);
-    expect(nonceModule.validateNonce).toHaveBeenCalledWith(baseAuthData.nonce, nonceMaxAge);
+    expect(nonceModule.validateNonce).toHaveBeenCalledWith(
+      baseAuthData.nonce,
+      nonceMaxAge,
+    );
   });
 
   it("should handle unexpected error during public key decoding", async () => {
@@ -192,7 +200,7 @@ describe("verify", () => {
     // but ensuring the path to an error in that section.
     // A more direct way would be to mock those specific utils if they were separate.
     // Here, we'll make publicKey invalid to cause bs58.decode to fail.
-    
+
     const faultyAuthData: NearAuthData = {
       ...baseAuthData,
       public_key: "ed25519:InvalidKeyChars$$", // Invalid base58 characters
@@ -207,10 +215,12 @@ describe("verify", () => {
     const result = await verify(faultyAuthData);
     expect(result.valid).toBe(false);
     // The error message from bs58.decode might vary, so check it's an error.
-    expect(result.error).toEqual(expect.any(String)); 
+    expect(result.error).toEqual(expect.any(String));
     // Check it's not one of the specific errors we've defined.
     expect(result.error).not.toBe("Invalid signature");
-    expect(result.error).not.toBe("Public key does not belong to the specified account or does not meet access requirements.");
+    expect(result.error).not.toBe(
+      "Public key does not belong to the specified account or does not meet access requirements.",
+    );
   });
 
   it("should return API failure when FastNEAR returns a non-ok response like 'Invalid argument'", async () => {
@@ -219,11 +229,15 @@ describe("verify", () => {
       status: 400,
       statusText: "Bad Request",
       text: async () => "Invalid argument.",
-      json: async () => { throw new Error("Should not attempt to parse JSON") } 
+      json: async () => {
+        throw new Error("Should not attempt to parse JSON");
+      },
     });
-    
+
     const result = await verify(baseAuthData);
     expect(result.valid).toBe(false);
-    expect(result.error).toBe("Failed to verify public key ownership with external API.");
+    expect(result.error).toBe(
+      "Failed to verify public key ownership with external API.",
+    );
   });
 });
