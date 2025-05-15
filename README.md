@@ -7,7 +7,7 @@ npm install near-sign-verify
 ```
 
 ```typescript
-import { generateNonce, createAuthToken, validateSignature } from 'near-sign-verify';
+import { generateNonce, createAuthToken, verify } from 'near-sign-verify';
 
 // Generate nonce
 const nonce = generateNonce(); // timestamp-based
@@ -40,6 +40,6 @@ fetch('https://api.example.com/endpoint', {
 // Parse token
 const authData = parseAuthToken(authToken);
 
-// Validate
-const isValid = await validateSignature(authData);
+// Verify
+const isValid = await verify(authData, { requireFullAccessKey: false, nonceMaxAge: 300000 });
 ```

@@ -5,7 +5,7 @@
 
 // Export auth functions
 export { createAuthToken } from "./auth/createAuthToken.js";
-export { validateSignature } from "./auth/validateSignature.js";
+export { verify, VerifyOptions } from "./auth/verify.js";
 export { parseAuthToken } from "./auth/parseAuthToken.js";
 
 // Export utility functions

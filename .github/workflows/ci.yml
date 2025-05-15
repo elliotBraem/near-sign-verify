@@ -9,8 +9,11 @@ on:
     types: [created]
 
 jobs:
-  test:
+  test:      
     runs-on: ubuntu-latest
+    env:
+      FAK_SECRET_KEY: ${{ secrets.FAK_SECRET_KEY }}
+      FCAK_SECRET_KEY: ${{ secrets.FCAK_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v3
       
