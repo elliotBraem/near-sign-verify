@@ -26,8 +26,7 @@
     "clean": "rimraf dist",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "bun run clean && bun run build && bun run test"
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "near",
