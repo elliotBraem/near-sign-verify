@@ -17,8 +17,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/index.ts --format cjs,esm,umd --dts --global-name NearSignVerify",
+    "dev": "tsup src/index.ts --format cjs,esm,umd --dts --global-name NearSignVerify --watch",
     "lint": "eslint src --ext .ts",
     "fmt": "prettier --write '**/*.{js,jsx,ts,tsx,json}'",
     "fmt:check": "prettier --check '**/*.{js,jsx,ts,tsx,json}'",
@@ -37,13 +37,15 @@
   "author": "elliotBraem",
   "license": "MIT",
   "dependencies": {
+    "@noble/hashes": "^1.8.0",
     "borsh": "^2.0.0",
     "bs58": "^5.0.0",
+    "elliptic": "^6.6.1",
     "tweetnacl": "^1.0.3",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@noble/hashes": "^1.8.0",
+    "@types/elliptic": "^6.4.18",
     "@types/node": "^20.10.5",
     "@vitest/coverage-v8": "^1.2.1",
     "dotenv": "^16.5.0",

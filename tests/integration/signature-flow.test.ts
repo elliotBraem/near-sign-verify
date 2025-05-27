@@ -1,17 +1,16 @@
-import { describe, it, expect, beforeAll } from "vitest";
-import * as near from "near-api-js";
-import { sha256 } from "@noble/hashes/sha2";
-import * as borsh from "borsh";
 import dotenv from "dotenv";
+import * as near from "near-api-js";
+import { KeyPairString } from "near-api-js/lib/utils/key_pair.js";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   generateNonce,
+  sign,
+  SignOptions,
+  VerificationResult,
   verify,
-  uint8ArrayToBase64,
-  TAG,
-  NearAuthData,
-  VerifyOptions,
+  VerifyOptions
 } from "../../src/index.js";
-import { KeyPairString } from "near-api-js/lib/utils/key_pair.js";
+import { uint8ArrayToBase64 } from "../../src/utils/encoding.js";
 
 dotenv.config();
 
@@ -51,180 +50,117 @@ describe("NEAR Signature Flow Integration Test", () => {
     }
   });
 
-  const createTestPayload = (
-    message: string,
-    nonce: Uint8Array,
-    recipient: string,
-    callback_url: string | null = null,
-  ) => {
-    return {
-      tag: TAG,
-      message,
-      nonce: Array.from(nonce), // Borsh schema expects array for nonce
-      receiver: recipient,
-      callback_url,
-    };
-  };
 
-  const schema = {
-    struct: {
-      tag: "u32",
-      message: "string",
-      nonce: { array: { type: "u8", len: 32 } },
-      receiver: "string",
-      callback_url: { option: "string" },
-    },
-  };
-
-  it("should detect an invalid signature (wrong key used for signing)", async () => {
-    const message = "Test wrong key";
-    const nonce = generateNonce();
+  it("should detect an invalid signature (wrong key used for signing, but claimed accountId)", async () => {
+    const appData = { detail: "Test wrong key" };
     const recipient = "someapp.near";
+    const callbackUrl = "https://example.com/wrongkey";
+    const specificNonce = generateNonce();
 
-    // Intended signer (e.g., our FCAK)
-    const intendedPublicKey = FCAK_PUBLIC_KEY;
     const intendedAccountId = SIGNVERIFYTESTS_ACCOUNT_ID;
-
-    // Actual signer (a different random key)
     const wrongKeyPair = near.KeyPair.fromRandom("ed25519");
 
-    const payload = createTestPayload(message, nonce, recipient);
-    const serializedPayload = borsh.serialize(schema, payload);
-    const payloadHash = sha256(serializedPayload);
-    const signedMessage = wrongKeyPair.sign(payloadHash); // Signed with wrong key
-
-    const authData: NearAuthData = {
-      message,
-      // @ts-expect-error near-api-js type issue with noble-hashes, expects Uint8Array<ArrayBuffer>
-      nonce,
+    const signOptions: SignOptions = {
+      signer: wrongKeyPair, // Signing with this wrong key
+      accountId: intendedAccountId, // But claiming this account ID
       recipient,
-      callback_url: "",
-      signature: uint8ArrayToBase64(signedMessage.signature),
-      account_id: intendedAccountId,
-      public_key: intendedPublicKey, // Public key of the intended signer
+      data: appData,
+      nonce: specificNonce,
+      callbackUrl,
     };
 
-    const validationResult = await verify(authData);
+    const authTokenString = await sign(signOptions);
 
-    expect(validationResult.valid).toBe(false);
-    expect(validationResult.error).toBe(
-      "Public key does not belong to the specified account or does not meet access requirements.",
+    await expect(
+      verify(authTokenString, { expectedRecipient: recipient })
+    ).rejects.toThrowError(/Public key ownership verification failed/);
+  });
+
+  it("should succeed when using FAK and requireFullAccessKey: true", async () => {
+    const appData = { detail: "Test with FAK" };
+    const recipient = "someapp.near";
+    const callbackUrl = "https://example.com/fak";
+    const specificNonce = generateNonce();
+
+    const signOptions: SignOptions = {
+      signer: FAK_KEY_PAIR,
+      accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
+      recipient,
+      data: appData,
+      nonce: specificNonce,
+      callbackUrl,
+    };
+    const authTokenString = await sign(signOptions);
+
+    const verificationResult: VerificationResult = await verify(authTokenString, {
+      expectedRecipient: recipient,
+      // requireFullAccessKey: true is default
+    });
+    expect(verificationResult.accountId).toBe(SIGNVERIFYTESTS_ACCOUNT_ID);
+    expect(verificationResult.messageData.data).toEqual(appData);
+    expect(verificationResult.messageData.recipient).toBe(recipient);
+    expect(verificationResult.messageData.nonce).toBe(uint8ArrayToBase64(specificNonce));
+  });
+
+  it("should fail when using FCAK and requireFullAccessKey: true", async () => {
+    const appData = { detail: "Test with FCAK, requireFullAccessKey=true" };
+    const recipient = "someapp.near";
+    const specificNonce = generateNonce();
+
+    const signOptions: SignOptions = {
+      signer: FCAK_KEY_PAIR,
+      accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
+      recipient,
+      data: appData,
+      nonce: specificNonce,
+    };
+    const authTokenString = await sign(signOptions);
+
+    const verifyOpts: VerifyOptions = { requireFullAccessKey: true, expectedRecipient: recipient };
+    await expect(verify(authTokenString, verifyOpts)).rejects.toThrowError(
+      /Public key ownership verification failed/
     );
   });
 
-  it("should succeed when using FAK for signverifytests.testnet and requireFullAccessKey: true", async () => {
-    const message = "Test with FAK";
-    const nonce = generateNonce();
+  it("should succeed when using FCAK and requireFullAccessKey: false", async () => {
+    const appData = { detail: "Test with FCAK, requireFullAccessKey=false" };
     const recipient = "someapp.near";
+    const specificNonce = generateNonce();
 
-    const payload = createTestPayload(message, nonce, recipient);
-    const serializedPayload = borsh.serialize(schema, payload);
-    const payloadHash = sha256(serializedPayload);
-    const signedMessage = FAK_KEY_PAIR.sign(payloadHash);
-
-    const authData: NearAuthData = {
-      message,
-      // @ts-expect-error near-api-js type issue with noble-hashes, expects Uint8Array<ArrayBuffer>
-      nonce,
+    const signOptions: SignOptions = {
+      signer: FCAK_KEY_PAIR,
+      accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
       recipient,
-      callback_url: "",
-      signature: uint8ArrayToBase64(signedMessage.signature),
-      account_id: SIGNVERIFYTESTS_ACCOUNT_ID,
-      public_key: FAK_PUBLIC_KEY,
+      data: appData,
+      nonce: specificNonce,
     };
+    const authTokenString = await sign(signOptions);
 
-    const validationResult = await verify(authData); // requireFullAccessKey defaults to true
-
-    expect(validationResult.valid).toBe(true);
-  });
-
-  it("should fail when using FCAK for signverifytests.testnet and requireFullAccessKey: true", async () => {
-    const message = "Test with FCAK, requireFullAccessKey=true";
-    const nonce = generateNonce();
-    const recipient = "someapp.near";
-
-    const payload = createTestPayload(message, nonce, recipient);
-    const serializedPayload = borsh.serialize(schema, payload);
-    const payloadHash = sha256(serializedPayload);
-    const signedMessage = FCAK_KEY_PAIR.sign(payloadHash);
-
-    const authData: NearAuthData = {
-      message,
-      // @ts-expect-error near-api-js type issue with noble-hashes, expects Uint8Array<ArrayBuffer>
-      nonce,
-      recipient,
-      callback_url: "",
-      signature: uint8ArrayToBase64(signedMessage.signature),
-      account_id: SIGNVERIFYTESTS_ACCOUNT_ID,
-      public_key: FCAK_PUBLIC_KEY,
-    };
-
-    const options: VerifyOptions = { requireFullAccessKey: true };
-    const validationResult = await verify(authData, options);
-
-    expect(validationResult.valid).toBe(false);
-    expect(validationResult.error).toBe(
-      "Public key does not belong to the specified account or does not meet access requirements.",
-    );
-  });
-
-  it("should succeed when using FCAK for signverifytests.testnet and requireFullAccessKey: false", async () => {
-    const message = "Test with FCAK, requireFullAccessKey=false";
-    const nonce = generateNonce();
-    const recipient = "someapp.near";
-
-    const payload = createTestPayload(message, nonce, recipient);
-    const serializedPayload = borsh.serialize(schema, payload);
-    const payloadHash = sha256(serializedPayload);
-    const signedMessage = FCAK_KEY_PAIR.sign(payloadHash);
-
-    const authData: NearAuthData = {
-      message,
-      // @ts-expect-error near-api-js type issue with noble-hashes, expects Uint8Array<ArrayBuffer>
-      nonce,
-      recipient,
-      callback_url: "",
-      signature: uint8ArrayToBase64(signedMessage.signature),
-      account_id: SIGNVERIFYTESTS_ACCOUNT_ID,
-      public_key: FCAK_PUBLIC_KEY,
-    };
-
-    const options: VerifyOptions = { requireFullAccessKey: false };
-    const validationResult = await verify(authData, options);
-
-    expect(validationResult.valid).toBe(true);
+    const verifyOpts: VerifyOptions = { requireFullAccessKey: false, expectedRecipient: recipient };
+    const verificationResult = await verify(authTokenString, verifyOpts);
+    expect(verificationResult.accountId).toBe(SIGNVERIFYTESTS_ACCOUNT_ID);
+    expect(verificationResult.messageData.data).toEqual(appData);
   });
 
   it("should fail for a random public key not associated with any account", async () => {
-    const message = "Test with random unassociated PK";
-    const nonce = generateNonce();
+    const appData = { detail: "Test with random unassociated PK" };
     const recipient = "someapp.near";
-    const namedAccountId = "somerandomuser.testnet"; // A named account
+    const specificNonce = generateNonce();
+    const claimedAccountId = "somerandomuser.testnet";
 
     const randomKeyPair = near.KeyPair.fromRandom("ed25519");
-    const randomPublicKey = randomKeyPair.getPublicKey().toString();
 
-    const payload = createTestPayload(message, nonce, recipient);
-    const serializedPayload = borsh.serialize(schema, payload);
-    const payloadHash = sha256(serializedPayload);
-    const signedMessage = randomKeyPair.sign(payloadHash);
-
-    const authData: NearAuthData = {
-      message,
-      // @ts-expect-error near-api-js type issue with noble-hashes, expects Uint8Array<ArrayBuffer>
-      nonce,
+    const signOptions: SignOptions = {
+      signer: randomKeyPair,
+      accountId: claimedAccountId,
       recipient,
-      callback_url: "",
-      signature: uint8ArrayToBase64(signedMessage.signature),
-      account_id: namedAccountId,
-      public_key: randomPublicKey,
+      data: appData,
+      nonce: specificNonce,
     };
+    const authTokenString = await sign(signOptions);
 
-    const validationResult = await verify(authData);
-
-    expect(validationResult.valid).toBe(false);
-    expect(validationResult.error).toBe(
-      "Public key does not belong to the specified account or does not meet access requirements.",
-    );
+    await expect(
+      verify(authTokenString, { expectedRecipient: recipient })
+    ).rejects.toThrowError(/Public key ownership verification failed/);
   });
 });

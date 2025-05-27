@@ -12,7 +12,6 @@ export const nearAuthDataBorshSchema = {
     nonce: { array: { type: "u8", len: 32 } },
     recipient: "string",
     callback_url: { option: "string" },
-    state: { option: "string" },
   },
 };
 
@@ -29,6 +28,5 @@ export function prepareBorshData(authData: NearAuthData): any {
     nonce: authData.nonce,
     recipient: authData.recipient,
     callback_url: authData.callback_url || null,
-    state: authData.state || null,
   };
 }
