@@ -1,6 +1,5 @@
+import { KeyPair, KeyPairString } from "@near-js/crypto";
 import dotenv from "dotenv";
-import * as near from "near-api-js";
-import { KeyPairString } from "near-api-js/lib/utils/key_pair.js";
 import { beforeAll, describe, expect, it } from "vitest";
 import {
   generateNonce,
@@ -8,9 +7,8 @@ import {
   parseAuthToken,
   sign,
   SignOptions,
-  verify,
-  createMessage,
-  VerificationResult
+  VerificationResult,
+  verify
 } from "../../src/index.js";
 import { uint8ArrayToBase64 } from "../../src/utils/encoding.js";
 
@@ -18,7 +16,7 @@ dotenv.config();
 
 const ACCOUNT_ID = "signverifytests.testnet";
 const FCAK_PUBLIC_KEY_STR = "ed25519:DKFEx1W5rxMNVAnqJ25Cq47Xvys4zZsrJg8bzgT971vt";
-let FCAK_KEY_PAIR: near.KeyPair;
+let FCAK_KEY_PAIR: KeyPair;
 
 describe("Sign Function", () => {
   beforeAll(() => {
@@ -28,7 +26,7 @@ describe("Sign Function", () => {
         "FCAK_SECRET_KEY not found in environment variables. Please ensure .env file is set up correctly."
       );
     }
-    FCAK_KEY_PAIR = near.KeyPair.fromString(fcakSecretKey as KeyPairString);
+    FCAK_KEY_PAIR = KeyPair.fromString(fcakSecretKey as KeyPairString);
     if (FCAK_KEY_PAIR.getPublicKey().toString() !== FCAK_PUBLIC_KEY_STR) {
       throw new Error(
         "Provided FCAK_SECRET_KEY does not match FCAK_PUBLIC_KEY_STR."

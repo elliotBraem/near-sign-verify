@@ -1,4 +1,4 @@
-import { KeyPair } from "near-api-js/lib/utils/key_pair.js";
+import { KeyPair } from "@near-js/crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ED25519_PREFIX,

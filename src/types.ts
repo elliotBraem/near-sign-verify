@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { KeyPair } from "near-api-js/lib/utils/key_pair.js";
+import type { KeyPair } from "@near-js/crypto";
 
 // --- Core Data Structures ---
 

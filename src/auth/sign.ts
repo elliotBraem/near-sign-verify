@@ -1,4 +1,4 @@
-import * as near from "near-api-js";
+import { KeyPair } from "@near-js/crypto";
 import type {
   SignOptions,
   NearAuthPayload,
@@ -18,7 +18,7 @@ interface InternalSignParameters {
 }
 
 async function _signWithKeyPair(
-  keyPair: near.KeyPair,
+  keyPair: KeyPair,
   signerId: string,
   params: InternalSignParameters
 ): Promise<string> {
@@ -96,11 +96,11 @@ async function _signWithWallet(
 }
 
 function detectSignerType(
-  signer: near.KeyPair | WalletInterface
+  signer: KeyPair | WalletInterface
 ): "keypair" | "wallet" {
   if (
-    typeof (signer as near.KeyPair).sign === "function" &&
-    typeof (signer as near.KeyPair).getPublicKey === "function"
+    typeof (signer as KeyPair).sign === "function" &&
+    typeof (signer as KeyPair).getPublicKey === "function"
   ) {
     return "keypair";
   }
@@ -143,7 +143,7 @@ export async function sign(options: SignOptions): Promise<string> {
     if (!accountId) {
       throw new Error("accountId is required when using a KeyPair signer.");
     }
-    return _signWithKeyPair(signer as near.KeyPair, accountId, internalParams);
+    return _signWithKeyPair(signer as KeyPair, accountId, internalParams);
   } else {
     // For wallet, accountId comes from the wallet's response, not from options.
     return _signWithWallet(signer as WalletInterface, internalParams);

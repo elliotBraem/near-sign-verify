@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { sign } from "../../src/auth/sign.js";
-import { KeyPair } from "near-api-js/lib/utils/key_pair.js";
+import { KeyPair } from "@near-js/crypto";
 import type { WalletInterface } from "../../src/types.js";
 
 describe("sign - Edge Cases", () => {

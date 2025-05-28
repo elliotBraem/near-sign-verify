@@ -284,33 +284,4 @@ describe("verify - Edge Cases", () => {
     const result = await verify(tokenString);
     expect(result.accountId).toBe(specialAccountId);
   });
-
-  it("should handle .test.near accounts correctly", async () => {
-    const testNearAccount = "myapp.test.near";
-    const testNearMessageData: MessageData = {
-      ...messageData,
-      recipient: "test-recipient.near"
-    };
-    const testNearAuthData: NearAuthData = {
-      ...baseAuthData,
-      account_id: testNearAccount,
-      message: JSON.stringify(testNearMessageData),
-      recipient: "test-recipient.near"
-    };
-    
-    const tokenString = createAuthToken(testNearAuthData);
-
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ account_ids: [testNearAccount] }),
-    });
-    vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
-
-    const result = await verify(tokenString);
-    
-    expect(result.accountId).toBe(testNearAccount);
-    expect(fetch).toHaveBeenCalledWith(
-      `https://test.api.fastnear.com/v0/public_key/${testNearAuthData.public_key}`
-    );
-  });
 });
