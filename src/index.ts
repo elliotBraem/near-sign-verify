@@ -1,8 +1,3 @@
-/**
- * near-sign-verify
- * NEAR wallet signature generation and verification utility for API authentication.
- */
-
 // --- Core API Functions ---
 export { sign } from "./auth/sign.js";
 export { verify } from "./auth/verify.js";

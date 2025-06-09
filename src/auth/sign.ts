@@ -1,13 +1,14 @@
-import { KeyPair } from "@near-js/crypto";
+import { fromBase58 } from "@fastnear/utils";
+import { ed25519 } from "@noble/curves/ed25519";
+import { ED25519_PREFIX, hashPayload, serializePayload, TAG } from "../crypto/crypto.js";
 import type {
-  SignOptions,
-  NearAuthPayload,
   NearAuthData,
+  NearAuthPayload,
+  SignOptions,
   WalletInterface,
 } from "../types.js";
-import { uint8ArrayToBase64 } from "../utils/encoding.js";
 import { createMessage } from "../utils/createMessage.js";
-import { hashPayload, serializePayload, TAG } from "../crypto/crypto.js";
+import { uint8ArrayToBase64 } from "../utils/encoding.js";
 import { createAuthToken } from "./createAuthToken.js";
 
 interface InternalSignParameters {
@@ -18,7 +19,7 @@ interface InternalSignParameters {
 }
 
 async function _signWithKeyPair(
-  keyPair: KeyPair,
+  keyPair: string,
   signerId: string,
   params: InternalSignParameters
 ): Promise<string> {
@@ -35,12 +36,13 @@ async function _signWithKeyPair(
   const serializedPayload = serializePayload(payloadToSerialize);
   const payloadHash = hashPayload(serializedPayload);
 
-  const signedResult = keyPair.sign(payloadHash);
-  const actualSignatureB64 = uint8ArrayToBase64(signedResult.signature);
+  const signedResult = ed25519.sign(payloadHash, fromBase58(keyPair));
+
+  const actualSignatureB64 = uint8ArrayToBase64(signedResult);
 
   const nearAuthDataObject: NearAuthData = {
     account_id: signerId,
-    public_key: keyPair.getPublicKey().toString(),
+    public_key: ed25519.getPublicKey(fromBase58(keyPair)).toString(),
     signature: actualSignatureB64,
     message: message,
     // @ts-expect-error Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'
@@ -58,25 +60,10 @@ async function _signWithWallet(
 ): Promise<string> {
   const { message, recipient, nonce, callbackUrl } = params;
 
-  const payloadToSerialize: NearAuthPayload = {
-    tag: TAG,
-    message: message,
-    nonce: nonce,
-    receiver: recipient,
-    callback_url: callbackUrl || undefined,
-  };
-
-  const serializedPayload = serializePayload(payloadToSerialize);
-  // Wallets are expected to sign the hash of the message, or the message itself if they handle hashing.
-  // For consistency with KeyPair signing (which signs a hash), we should ideally pass the hash.
-  // However, the WalletInterface is generic. Let's assume the wallet expects the raw bytes to sign/hash-and-sign.
-  // The current WalletInterface expects `messageToSign: { message: Uint8Array }`
-  // This `Uint8Array` should be the `serializedPayload` itself, not its hash,
-  // as some wallets might want to display the pre-image or handle hashing differently.
-  // If a wallet strictly needs a pre-computed hash, the interface might need adjustment or the wallet adapter.
-
   const walletResult = await wallet.signMessage({
-    message: serializedPayload, // Pass the serialized payload for the wallet to handle
+    message,
+    nonce,
+    recipient
   });
 
   const actualSignatureB64 = uint8ArrayToBase64(walletResult.signature);
@@ -96,16 +83,15 @@ async function _signWithWallet(
 }
 
 function detectSignerType(
-  signer: KeyPair | WalletInterface
+  signer: string | WalletInterface
 ): "keypair" | "wallet" {
-  if (
-    typeof (signer as KeyPair).sign === "function" &&
-    typeof (signer as KeyPair).getPublicKey === "function"
-  ) {
-    return "keypair";
-  }
   if (typeof (signer as WalletInterface).signMessage === "function") {
     return "wallet";
+  }
+  if (  
+    (signer as string).startsWith(ED25519_PREFIX)
+  ) {
+    return "keypair";
   }
   throw new Error(
     "Invalid signer: must be KeyPair or a wallet object with a signMessage method."
@@ -143,7 +129,7 @@ export async function sign(options: SignOptions): Promise<string> {
     if (!accountId) {
       throw new Error("accountId is required when using a KeyPair signer.");
     }
-    return _signWithKeyPair(signer as KeyPair, accountId, internalParams);
+    return _signWithKeyPair(signer as string, accountId, internalParams);
   } else {
     // For wallet, accountId comes from the wallet's response, not from options.
     return _signWithWallet(signer as WalletInterface, internalParams);

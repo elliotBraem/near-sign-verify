@@ -8,7 +8,7 @@ describe("sign - Edge Cases", () => {
     const keyPair = KeyPair.fromRandom("ed25519");
 
     await expect(sign({
-      signer: keyPair,
+      signer: keyPair.toString(),
       // accountId missing
       recipient: "recipient.near",
     })).rejects.toThrow("accountId is required when using a KeyPair signer");

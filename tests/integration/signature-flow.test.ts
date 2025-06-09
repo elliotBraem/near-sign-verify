@@ -60,7 +60,7 @@ describe("NEAR Signature Flow Integration Test", () => {
     const wrongKeyPair = KeyPair.fromRandom("ed25519");
 
     const signOptions: SignOptions = {
-      signer: wrongKeyPair, // Signing with this wrong key
+      signer: wrongKeyPair.toString(), // Signing with this wrong key
       accountId: intendedAccountId, // But claiming this account ID
       recipient,
       data: appData,
@@ -82,7 +82,7 @@ describe("NEAR Signature Flow Integration Test", () => {
     const specificNonce = generateNonce();
 
     const signOptions: SignOptions = {
-      signer: FAK_KEY_PAIR,
+      signer: FAK_KEY_PAIR.toString(),
       accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
       recipient,
       data: appData,
@@ -107,7 +107,7 @@ describe("NEAR Signature Flow Integration Test", () => {
     const specificNonce = generateNonce();
 
     const signOptions: SignOptions = {
-      signer: FCAK_KEY_PAIR,
+      signer: FCAK_KEY_PAIR.toString(),
       accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
       recipient,
       data: appData,
@@ -127,7 +127,7 @@ describe("NEAR Signature Flow Integration Test", () => {
     const specificNonce = generateNonce();
 
     const signOptions: SignOptions = {
-      signer: FCAK_KEY_PAIR,
+      signer: FCAK_KEY_PAIR.toString(),
       accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
       recipient,
       data: appData,
@@ -150,7 +150,7 @@ describe("NEAR Signature Flow Integration Test", () => {
     const randomKeyPair = KeyPair.fromRandom("ed25519");
 
     const signOptions: SignOptions = {
-      signer: randomKeyPair,
+      signer: randomKeyPair.toString(),
       accountId: claimedAccountId,
       recipient,
       data: appData,

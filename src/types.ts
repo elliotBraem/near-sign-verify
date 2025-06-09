@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { KeyPair } from "@near-js/crypto";
 
 // --- Core Data Structures ---
 
@@ -21,7 +20,7 @@ export interface SignOptions {
    * The signer, which can be a NEAR KeyPair or a wallet object.
    * The library will detect the type at runtime.
    */
-  signer: KeyPair | WalletInterface;
+  signer: string | WalletInterface;
   /**
    * The NEAR account ID of the intended signer.
    * Required if `signer` is a KeyPair. Ignored if `signer` is a wallet
@@ -66,7 +65,7 @@ export type VerifyOptions = {
    */
   expectedRecipient?: string;
 } & (
-  | {
+    | {
       /**
        * Maximum age of the nonce in milliseconds.
        * If not provided, a default value (e.g., 24 hours) will be used.
@@ -75,7 +74,7 @@ export type VerifyOptions = {
       nonceMaxAge?: number;
       validateNonce?: never; // Ensures validateNonce is not provided with nonceMaxAge
     }
-  | {
+    | {
       /**
        * A custom function to validate the nonce.
        * Receives the parsed `MessageData` object.
@@ -85,7 +84,7 @@ export type VerifyOptions = {
       validateNonce: (messageData: MessageData) => boolean;
       nonceMaxAge?: never; // Ensures nonceMaxAge is not provided with validateNonce
     }
-);
+  );
 
 /**
  * The result of a successful verification.
@@ -107,26 +106,15 @@ export interface VerificationResult {
  */
 export interface WalletInterface {
   signMessage: (
-    // Wallets typically sign a message (often a string or Uint8Array representing a hash or pre-image)
-    // The `sign` function will prepare the canonical NearAuthPayload, hash it,
-    // and then the wallet's signMessage would sign that hash.
-    // However, to keep this interface generic to how wallets actually behave,
-    // we expect the wallet's signMessage to handle the hashing if it needs to.
-    // The `sign` function will pass the *pre-hashed* canonical payload to this.
-    // This needs careful implementation in the `sign` function.
-    // For now, let's assume the wallet expects the message it needs to sign directly.
-    // The `sign` function will construct the NearAuthPayload, serialize it, and pass it here.
-    // The wallet is then responsible for hashing (if necessary) and signing.
     messageToSign: {
-      message: Uint8Array; // The canonical bytes to be signed (or hashed then signed)
-      // Some wallets might need more context, but this is the core.
-      // We might need to adjust this if wallets require the pre-image of a hash.
-      // For now, this is the serialized NearAuthPayload.
+      message: string;
+      recipient: string;
+      nonce: Uint8Array<ArrayBufferLike>;
     }
   ) => Promise<{
-    signature: Uint8Array; // Raw signature bytes
-    publicKey: string; // Public key string of the signing key
-    accountId: string; // Account ID that performed the signature
+    signature: Uint8Array<ArrayBufferLike>;
+    publicKey: string;
+    accountId: string;
   }>;
 }
 

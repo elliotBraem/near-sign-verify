@@ -41,7 +41,7 @@ describe("Sign Function", () => {
     const specificNonce = generateNonce();
 
     const signOptions: SignOptions = {
-      signer: FCAK_KEY_PAIR,
+      signer: FCAK_KEY_PAIR.toString(),
       accountId: ACCOUNT_ID,
       recipient,
       data: appData,
@@ -82,7 +82,7 @@ describe("Sign Function", () => {
     const recipient = "another-app.near";
 
     const signOptions: SignOptions = {
-      signer: FCAK_KEY_PAIR,
+      signer: FCAK_KEY_PAIR.toString(),
       accountId: ACCOUNT_ID,
       recipient,
       data: appData,

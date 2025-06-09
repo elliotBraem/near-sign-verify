@@ -6,61 +6,129 @@ Creates and validates NEAR signatures for API authentication.
 npm install near-sign-verify
 ```
 
+## with KeyPair
+
+Works with both full access and function call access keys.
+
 ```typescript
-import { sign, verify } from 'near-sign-verify';
-import { KeyPair } from '@near-js/crypto'; // For KeyPair example
+// --- Create request with signed token ---
+import { sign } from "near-sign-verify";
+import { KeyPair } from '@near-js/crypto';
 
-  // --- Signer Setup (using KeyPair for this example) ---
-const keyPair = KeyPair.fromRandom('ed25519');
-const accountId = 'you.near'; // Your account ID
-const recipient = 'your-service.near'; // The intended recipient of the auth token
+const keyPair = KeyPair.fromRandom('ed25519'); // for example
 
-// --- Sign to create an Auth Token ---
-// The 'sign' function now handles message structuring internally.
-// It includes a nonce, timestamp, recipient, and your optional data.
 const authToken = await sign({
-  signer: keyPair,
-  accountId: accountId,
-  recipient: recipient,
-  data: { customInfo: 'login attempt' }, // Optional: any app-specific data
+  signer: keyPair.toString(),
+  accountId: "you.near", // PubKey owner (you can pretend)
+  recipient: "your-service.near",
+  data: { customInfo: "login attempt" } // whatever data you wanna pass
 });
 
-console.log('Generated Auth Token:', authToken);
-
 // --- Send request with the token ---
-// fetch('https://api.example.com/endpoint', {
-//   headers: { 'Authorization': `Bearer ${authToken}` },
-// });
 
-// --- Verify the Auth Token (typically on a backend) ---
+fetch('https://api.example.com/endpoint', {
+  headers: { 'Authorization': `Bearer ${authToken}` },
+});
+
+// --- Verify the token ---
+
 try {
-  const verificationResult = await verify(authToken, {
-    expectedRecipient: recipient, // Ensure token is for your service
+  const result = await verify(authToken, {
+    expectedRecipient: "your-service.near", // Ensure token is for your service
     requireFullAccessKey: false,  // Allow Function Call Access Keys
-    nonceMaxAge: 300000,          // 5 minutes
+    nonceMaxAge: 300000,          // 5 minutes since message signed
   });
 
   // If verification is successful, you get a VerificationResult
-  console.log('Successfully verified for account:', verificationResult.accountId);
-  console.log('Message data from token:', verificationResult.messageData);
-  // verificationResult.messageData.data will contain { customInfo: 'login attempt' }
+  console.log('Successfully verified for account:', result.accountId);
+  // you.near
+  console.log('Message data from token:', result.messageData);
+  // { customInfo: 'login attempt' }
 
 } catch (error: any) {
   // If verification fails, an error is thrown
   console.error('Token verification failed:', error.message);
 }
-
-// --- Optional: Parse token without full verification (for debugging) ---
-// try {
-//   const parsedData = parseAuthToken(authToken);
-//   console.log('Parsed token (no signature check):', parsedData.accountId, parsedData.message);
-// } catch (e: any) {
-//   console.error('Failed to parse token:', e.message);
-// }
-
-const walletToken = await sign({ signer: myWallet, recipient: 'app.near', data: { ... } });
 ```
 
-## TODO
+## with Wallet
 
-- [ ] signverify.near.page - easy to use methods; sample of adding key to a server?
+```typescript
+import { sign, verify } from 'near-sign-verify';
+
+// use your wallet, wherever it comes from...
+const wallet = near // fastnear-js or fastintear
+const wallet = await (await this.selector).wallet(); // near-wallet-selector
+const { wallet } = useWalletSelector();
+
+const authToken = await sign({
+  signer: wallet, // has a signMessage function
+  recipient: 'app.near',
+  data: { ... }
+});
+
+// --- Send request with the token ---
+
+fetch('https://api.example.com/endpoint', {
+  headers: { 'Authorization': `Bearer ${authToken}` },
+});
+
+// --- Verify the token ---
+
+try {
+  const result = await verify(authToken, {
+    expectedRecipient: "your-service.near", // Ensure token is for your service
+    // by default, wallet ensures a full access key (will always work)
+    nonceMaxAge: 300000,                    // 5 minutes since message signed
+  });
+
+  // If verification is successful, you get a VerificationResult
+  console.log('Successfully verified for account:', result.accountId);
+  // you.near
+  console.log('Message data from token:', result.messageData);
+  // { customInfo: 'login attempt' }
+
+} catch (error: any) {
+  // If verification fails, an error is thrown
+  console.error('Token verification failed:', error.message);
+}
+```
+
+## with custom nonce + validation
+
+You can override the default nonce generation and validation (timestamp based, maxAge):
+
+```typescript
+import { sign, verify } from "near-sign-verify";
+
+const authToken = await sign({
+  signer: wallet,
+  recipient: "your-service.near",
+  nonce: 1, // your nonce override
+  data: { customInfo: "login attempt" } // whatever data you wanna pass
+})
+
+try {
+  const result = await verify(authToken, {
+    expectedRecipient: "your-service.near",
+    validateNonce: (message: MessageData): boolean => {
+      // do something
+      console.log("nonce": message.nonce);
+      return true;
+    }
+  });
+} catch {
+  // failed
+}
+```
+
+## debugging
+
+You can use the `parseAuthToken` helper method to inspect the outcome of `sign`.
+
+```typescript
+
+import { parseAuthToken, type NearAuthData } from "near-sign-verify";
+
+const authData: NearAuthData = parseAuthToken(authToken);
+```
