@@ -1,4 +1,4 @@
-import { fromBase58 } from "@fastnear/utils";
+import { fromBase58, toBase58 } from "@fastnear/utils";
 import { ed25519 } from "@noble/curves/ed25519";
 import {
   ED25519_PREFIX,
@@ -41,13 +41,29 @@ async function _signWithKeyPair(
   const serializedPayload = serializePayload(payloadToSerialize);
   const payloadHash = hashPayload(serializedPayload);
 
-  const signedResult = ed25519.sign(payloadHash, fromBase58(keyPair));
+  if (!keyPair.startsWith(ED25519_PREFIX)) {
+    throw new Error("Invalid KeyPair format: missing ed25519 prefix.");
+  }
+  const privateKeyBase58 = keyPair.substring(ED25519_PREFIX.length);
+  const privateKeyBytes = fromBase58(privateKeyBase58);
+
+  if (privateKeyBytes.length !== 64) {
+    throw new Error(
+      `Expected decoded private key to be 64 bytes for Ed25519, got ${privateKeyBytes.length}`,
+    );
+  }
+  const seed = privateKeyBytes.slice(0, 32); // Extract the 32-byte seed
+
+  const signedResult = ed25519.sign(payloadHash, seed);
 
   const actualSignatureB64 = uint8ArrayToBase64(signedResult);
 
+  const publicKeyBytes = ed25519.getPublicKey(seed);
+  const publicKeyString = ED25519_PREFIX + toBase58(publicKeyBytes);
+
   const nearAuthDataObject: NearAuthData = {
     account_id: signerId,
-    public_key: ed25519.getPublicKey(fromBase58(keyPair)).toString(),
+    public_key: publicKeyString,
     signature: actualSignatureB64,
     message: message,
     // @ts-expect-error Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'
@@ -107,7 +123,7 @@ function detectSignerType(
   if (typeof (signer as WalletInterface).signMessage === "function") {
     return "wallet";
   }
-  if ((signer as string).startsWith(ED25519_PREFIX)) {
+  if (typeof signer === 'string' && signer.startsWith(ED25519_PREFIX)) {
     return "keypair";
   }
   throw new Error(

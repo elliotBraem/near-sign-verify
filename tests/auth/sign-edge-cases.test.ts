@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { sign } from "../../src/auth/sign.js";
 import * as near from "near-api-js";
 import type { WalletInterface } from "../../src/types.js";
+import { toBase58 } from "@fastnear/utils";
 
 describe("sign - Edge Cases", () => {
   it("should throw error when accountId is missing for KeyPair signer", async () => {
@@ -84,30 +85,24 @@ describe("sign - Edge Cases", () => {
     ).rejects.toThrow("Wallet signing failed");
   });
 
-  it("should handle KeyPair signing errors", async () => {
-    const mockKeyPair = {
-      sign: vi.fn().mockImplementation(() => {
-        throw new Error("KeyPair signing failed");
-      }),
-      getPublicKey: vi.fn().mockReturnValue({
-        toString: () => "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
-      }),
-    } as any;
-
+  it("should handle KeyPair signing errors (e.g., malformed key string)", async () => {
+    const malformedKeyPairString = "ed25519:ThisIsNotValidBase58AndWillCauseAnErrorDuringDecoding!!!";
     await expect(
       sign({
-        signer: mockKeyPair,
+        signer: malformedKeyPairString,
         accountId: "test.near",
         message: "hello",
         recipient: "recipient.near",
       }),
-    ).rejects.toThrow("KeyPair signing failed");
+    ).rejects.toThrow(/Invalid base58 character/);
   });
 
   it("should work with wallet that provides accountId", async () => {
+    const rawSignature = new Uint8Array(64).fill(1);
+    const base58Signature = toBase58(rawSignature);
     const mockWallet: WalletInterface = {
       signMessage: vi.fn().mockResolvedValue({
-        signature: new Uint8Array(64).fill(1),
+        signature: `ed25519:${base58Signature}`,
         publicKey: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
         accountId: "wallet-provided.near",
       }),

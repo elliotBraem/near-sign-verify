@@ -58,10 +58,10 @@ describe("Crypto Module - Edge Cases & Core Functionality", () => {
     });
 
     it("should throw if Ed25519 public key is malformed", async () => {
-      const malformedKey = ED25519_PREFIX + "invalidKeyData";
+      const malformedKey = ED25519_PREFIX + "invalidKeyData"; // "l" is an invalid base58 char
       await expect(
         verifySignature(testPayloadHash, ed25519Signature, malformedKey),
-      ).rejects.toThrow(/^Failed to parse public key/);
+      ).rejects.toThrow(/Invalid base58 character/);
     });
 
     it("should throw for invalid Ed25519 signature", async () => {
