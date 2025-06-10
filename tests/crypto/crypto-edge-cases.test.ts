@@ -1,4 +1,4 @@
-import { KeyPair } from "@near-js/crypto";
+import * as near from "near-api-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ED25519_PREFIX,
@@ -24,9 +24,7 @@ describe("Crypto Module - Edge Cases & Core Functionality", () => {
     });
 
     it("should produce the same hash for the same payload", () => {
-      const payload = new Uint8Array(
-        Array.from({ length: 100 }, (_, i) => i)
-      );
+      const payload = new Uint8Array(Array.from({ length: 100 }, (_, i) => i));
       const hash1 = hashPayload(payload);
       const hash2 = hashPayload(payload);
       expect(hash1).toEqual(hash2);
@@ -46,23 +44,23 @@ describe("Crypto Module - Edge Cases & Core Functionality", () => {
     const testPayloadHash = hashPayload(testPayload);
 
     // Ed25519
-    const ed25519KeyPair = KeyPair.fromRandom("ed25519");
+    const ed25519KeyPair = near.KeyPair.fromRandom("ed25519");
     const ed25519PublicKeyString = ed25519KeyPair.getPublicKey().toString();
     const ed25519Signature = ed25519KeyPair.sign(testPayloadHash).signature;
 
     it("should throw for unsupported public key types", async () => {
       const invalidKey = "rsa:somekeydata";
       await expect(
-        verifySignature(testPayloadHash, ed25519Signature, invalidKey)
+        verifySignature(testPayloadHash, ed25519Signature, invalidKey),
       ).rejects.toThrow(
-        `Failed to parse public key "${invalidKey}": Unknown key type rsa`
+        `Unsupported public key type: "${invalidKey}". Must start with "ed25519:".`,
       );
     });
 
     it("should throw if Ed25519 public key is malformed", async () => {
       const malformedKey = ED25519_PREFIX + "invalidKeyData";
       await expect(
-        verifySignature(testPayloadHash, ed25519Signature, malformedKey)
+        verifySignature(testPayloadHash, ed25519Signature, malformedKey),
       ).rejects.toThrow(/^Failed to parse public key/);
     });
 
@@ -73,8 +71,8 @@ describe("Crypto Module - Edge Cases & Core Functionality", () => {
         verifySignature(
           testPayloadHash,
           tamperedSignature,
-          ed25519PublicKeyString
-        )
+          ed25519PublicKeyString,
+        ),
       ).rejects.toThrow("Ed25519 signature verification failed.");
     });
 
@@ -83,8 +81,8 @@ describe("Crypto Module - Edge Cases & Core Functionality", () => {
         verifySignature(
           testPayloadHash,
           ed25519Signature,
-          ed25519PublicKeyString
-        )
+          ed25519PublicKeyString,
+        ),
       ).resolves.toBe(true);
     });
   });

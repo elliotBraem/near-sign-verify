@@ -42,7 +42,7 @@ try {
   // If verification is successful, you get a VerificationResult
   console.log('Successfully verified for account:', result.accountId);
   // you.near
-  console.log('Message data from token:', result.messageData);
+  console.log('Message from token:', result.message);
   // { customInfo: 'login attempt' }
 
 } catch (error: any) {
@@ -85,7 +85,7 @@ try {
   // If verification is successful, you get a VerificationResult
   console.log('Successfully verified for account:', result.accountId);
   // you.near
-  console.log('Message data from token:', result.messageData);
+  console.log('Message from token:', result.message);
   // { customInfo: 'login attempt' }
 
 } catch (error: any) {
@@ -111,9 +111,8 @@ const authToken = await sign({
 try {
   const result = await verify(authToken, {
     expectedRecipient: "your-service.near",
-    validateNonce: (message: MessageData): boolean => {
+    validateNonce: (nonce: Uint8Array): boolean => {
       // do something
-      console.log("nonce": message.nonce);
       return true;
     }
   });

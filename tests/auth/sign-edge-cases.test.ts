@@ -1,17 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 import { sign } from "../../src/auth/sign.js";
-import { KeyPair } from "@near-js/crypto";
+import * as near from "near-api-js";
 import type { WalletInterface } from "../../src/types.js";
 
 describe("sign - Edge Cases", () => {
   it("should throw error when accountId is missing for KeyPair signer", async () => {
-    const keyPair = KeyPair.fromRandom("ed25519");
+    const keyPair = near.KeyPair.fromRandom("ed25519");
 
-    await expect(sign({
-      signer: keyPair.toString(),
-      // accountId missing
-      recipient: "recipient.near",
-    })).rejects.toThrow("accountId is required when using a KeyPair signer");
+    await expect(
+      sign({
+        signer: keyPair.toString(),
+        message: "hello",
+        recipient: "recipient.near",
+      }),
+    ).rejects.toThrow("accountId is required when using a KeyPair signer");
   });
 
   it("should throw error for invalid signer type", async () => {
@@ -20,11 +22,16 @@ describe("sign - Edge Cases", () => {
       someOtherMethod: () => {},
     } as any;
 
-    await expect(sign({
-      signer: invalidSigner,
-      accountId: "test.near",
-      recipient: "recipient.near",
-    })).rejects.toThrow("Invalid signer: must be KeyPair or a wallet object with a signMessage method");
+    await expect(
+      sign({
+        signer: invalidSigner,
+        accountId: "test.near",
+        message: "hello",
+        recipient: "recipient.near",
+      }),
+    ).rejects.toThrow(
+      "Invalid signer: must be KeyPair or a wallet object with a signMessage method",
+    );
   });
 
   it("should throw error for object with only partial KeyPair interface", async () => {
@@ -32,11 +39,16 @@ describe("sign - Edge Cases", () => {
       sign: () => {}, // Has sign but missing getPublicKey
     } as any;
 
-    await expect(sign({
-      signer: partialKeyPair,
-      accountId: "test.near",
-      recipient: "recipient.near",
-    })).rejects.toThrow("Invalid signer: must be KeyPair or a wallet object with a signMessage method");
+    await expect(
+      sign({
+        signer: partialKeyPair,
+        accountId: "test.near",
+        message: "hello",
+        recipient: "recipient.near",
+      }),
+    ).rejects.toThrow(
+      "Invalid signer: must be KeyPair or a wallet object with a signMessage method",
+    );
   });
 
   it("should throw error for object with only partial WalletInterface", async () => {
@@ -44,22 +56,32 @@ describe("sign - Edge Cases", () => {
       someMethod: () => {}, // Missing signMessage
     } as any;
 
-    await expect(sign({
-      signer: partialWallet,
-      accountId: "test.near",
-      recipient: "recipient.near",
-    })).rejects.toThrow("Invalid signer: must be KeyPair or a wallet object with a signMessage method");
+    await expect(
+      sign({
+        signer: partialWallet,
+        accountId: "test.near",
+        message: "hello",
+        recipient: "recipient.near",
+      }),
+    ).rejects.toThrow(
+      "Invalid signer: must be KeyPair or a wallet object with a signMessage method",
+    );
   });
 
   it("should handle wallet signing errors", async () => {
     const mockWallet: WalletInterface = {
-      signMessage: vi.fn().mockRejectedValue(new Error("Wallet signing failed")),
+      signMessage: vi
+        .fn()
+        .mockRejectedValue(new Error("Wallet signing failed")),
     };
 
-    await expect(sign({
-      signer: mockWallet,
-      recipient: "recipient.near",
-    })).rejects.toThrow("Wallet signing failed");
+    await expect(
+      sign({
+        signer: mockWallet,
+        recipient: "recipient.near",
+        message: "hello",
+      }),
+    ).rejects.toThrow("Wallet signing failed");
   });
 
   it("should handle KeyPair signing errors", async () => {
@@ -72,11 +94,14 @@ describe("sign - Edge Cases", () => {
       }),
     } as any;
 
-    await expect(sign({
-      signer: mockKeyPair,
-      accountId: "test.near",
-      recipient: "recipient.near",
-    })).rejects.toThrow("KeyPair signing failed");
+    await expect(
+      sign({
+        signer: mockKeyPair,
+        accountId: "test.near",
+        message: "hello",
+        recipient: "recipient.near",
+      }),
+    ).rejects.toThrow("KeyPair signing failed");
   });
 
   it("should work with wallet that provides accountId", async () => {
@@ -90,6 +115,7 @@ describe("sign - Edge Cases", () => {
 
     const result = await sign({
       signer: mockWallet,
+      message: "hello",
       recipient: "recipient.near",
     });
 

@@ -28,10 +28,10 @@ describe("validation", () => {
     });
 
     try {
-      schema.parse({ 
+      schema.parse({
         name: 123, // Should be string
         age: "not-a-number", // Should be number
-        email: "invalid-email" // Should be valid email
+        email: "invalid-email", // Should be valid email
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -55,12 +55,12 @@ describe("validation", () => {
     });
 
     try {
-      schema.parse({ 
-        user: { 
-          profile: { 
-            name: 123 // Should be string
-          } 
-        } 
+      schema.parse({
+        user: {
+          profile: {
+            name: 123, // Should be string
+          },
+        },
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -77,8 +77,8 @@ describe("validation", () => {
     });
 
     try {
-      schema.parse({ 
-        items: ["valid", 123, "also-valid"] // Middle item should be string
+      schema.parse({
+        items: ["valid", 123, "also-valid"], // Middle item should be string
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

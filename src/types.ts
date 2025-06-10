@@ -1,17 +1,5 @@
 import { z } from "zod";
 
-// --- Core Data Structures ---
-
-/**
- * Represents the structured data within the message string that is signed.
- */
-export interface MessageData {
-  nonce: string; // Base64 encoded nonce
-  timestamp: number; // Unix timestamp (milliseconds)
-  recipient: string; // Intended recipient of the message/action
-  data?: string | Record<string, any>; // Optional application-specific data
-}
-
 /**
  * Options for the main `sign` function.
  */
@@ -33,10 +21,9 @@ export interface SignOptions {
    */
   recipient: string;
   /**
-   * Optional application-specific data to include in the message.
-   * Can be a string or a JSON-serializable object.
+   * Message to sign, can be application specific data.
    */
-  data?: string | Record<string, any>;
+  message: string;
   /**
    * Optional 32-byte nonce as a Uint8Array.
    * If not provided, a nonce will be generated.
@@ -65,7 +52,7 @@ export type VerifyOptions = {
    */
   expectedRecipient?: string;
 } & (
-    | {
+  | {
       /**
        * Maximum age of the nonce in milliseconds.
        * If not provided, a default value (e.g., 24 hours) will be used.
@@ -74,17 +61,16 @@ export type VerifyOptions = {
       nonceMaxAge?: number;
       validateNonce?: never; // Ensures validateNonce is not provided with nonceMaxAge
     }
-    | {
+  | {
       /**
        * A custom function to validate the nonce.
-       * Receives the parsed `MessageData` object.
        * Should return true if the nonce is valid, false otherwise.
        * This option is mutually exclusive with `nonceMaxAge`.
        */
-      validateNonce: (messageData: MessageData) => boolean;
+      validateNonce: (nonce: Uint8Array) => boolean;
       nonceMaxAge?: never; // Ensures nonceMaxAge is not provided with validateNonce
     }
-  );
+);
 
 /**
  * The result of a successful verification.
@@ -92,8 +78,8 @@ export type VerifyOptions = {
 export interface VerificationResult {
   /** The NEAR account ID that was successfully authenticated. */
   accountId: string;
-  /** The parsed MessageData object from the verified token. */
-  messageData: MessageData;
+  /** The parsed message from the verified token. */
+  message: string;
   /** The public key string used for the signature. */
   publicKey: string;
   /** The callback URL from the token, if present. */
@@ -105,14 +91,12 @@ export interface VerificationResult {
  * This allows for duck-typing of wallet objects.
  */
 export interface WalletInterface {
-  signMessage: (
-    messageToSign: {
-      message: string;
-      recipient: string;
-      nonce: Uint8Array<ArrayBufferLike>;
-    }
-  ) => Promise<{
-    signature: Uint8Array<ArrayBufferLike>;
+  signMessage: (messageToSign: {
+    message: string;
+    recipient: string;
+    nonce: Uint8Array<ArrayBufferLike>;
+  }) => Promise<{
+    signature: string;
     publicKey: string;
     accountId: string;
   }>;
@@ -128,7 +112,7 @@ export interface BorshNearAuthData {
   account_id: string;
   public_key: string;
   signature: string; // Base64 encoded signature of the hashed NearAuthPayload
-  message: string; // The JSON.stringified MessageData object
+  message: string;
   nonce: number[]; // Borsh representation of Uint8Array
   recipient: string; // Recipient from the SignOptions, part of NearAuthPayload
   callback_url: string | null;
@@ -142,8 +126,9 @@ export const NearAuthDataSchema = z.object({
   account_id: z.string(),
   public_key: z.string(),
   signature: z.string(),
-  message: z.string(), // This will be the JSON string of MessageData
-  nonce: z.union([ // Nonce from the NearAuthPayload
+  message: z.string(),
+  nonce: z.union([
+    // Nonce from the NearAuthPayload
     z.instanceof(Uint8Array),
     z.array(z.number()).transform((arr) => new Uint8Array(arr)),
   ]),
@@ -163,7 +148,7 @@ export type NearAuthData = z.infer<typeof NearAuthDataSchema>;
  */
 export interface NearAuthPayload {
   tag: number; // A constant tag (e.g., 2147484061 from crypto.ts)
-  message: string; // The JSON.stringified MessageData object
+  message: string;
   nonce: Uint8Array; // The actual nonce bytes
   receiver: string; // The recipient
   callback_url?: string; // Optional callback URL

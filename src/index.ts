@@ -4,7 +4,6 @@ export { verify } from "./auth/verify.js";
 
 // --- Helper Functions ---
 export { parseAuthToken } from "./auth/parseAuthToken.js";
-export { createMessage } from "./utils/createMessage.js";
 export { generateNonce, validateNonce } from "./utils/nonce.js";
 
 // --- Utility Exports ---
@@ -13,12 +12,15 @@ export {
   base64ToUint8Array,
   stringToUint8Array,
   uint8ArrayToBase64,
-  uint8ArrayToString
+  uint8ArrayToString,
 } from "./utils/encoding.js";
 
 // --- Core Types ---
 export type {
-  MessageData, NearAuthData,
-  NearAuthPayload, SignOptions, VerificationResult, VerifyOptions, WalletInterface
+  NearAuthData,
+  NearAuthPayload,
+  SignOptions,
+  VerificationResult,
+  VerifyOptions,
+  WalletInterface,
 } from "./types.js";
-

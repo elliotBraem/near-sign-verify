@@ -3,7 +3,7 @@ import { verify } from "../../src/auth/verify.js";
 import { createAuthToken } from "../../src/auth/createAuthToken.js";
 import * as cryptoModule from "../../src/crypto/crypto.js";
 import * as nonceModule from "../../src/utils/nonce.js";
-import type { NearAuthData, MessageData } from "../../src/types.js";
+import type { NearAuthData } from "../../src/types.js";
 
 // Mock dependencies
 vi.mock("../../src/crypto/crypto.js");
@@ -14,20 +14,12 @@ global.fetch = vi.fn();
 
 describe("verify", () => {
   const testNonce = new Uint8Array(32); // Assuming a valid 32-byte nonce
-  
-  // Create a proper MessageData structure for the new API
-  const messageData: MessageData = {
-    nonce: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", // Base64 of 32 zero bytes
-    timestamp: Date.now(),
-    recipient: "recipient.near",
-    data: "Hello, world!"
-  };
 
   const baseAuthData: NearAuthData = {
     account_id: "testuser.testnet",
     public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
     signature: "base64signature",
-    message: JSON.stringify(messageData),
+    message: "test message",
     nonce: testNonce,
     recipient: "recipient.near",
   };
@@ -57,7 +49,7 @@ describe("verify", () => {
 
     expect(result.accountId).toBe(baseAuthData.account_id);
     expect(result.publicKey).toBe(baseAuthData.public_key);
-    expect(result.messageData).toEqual(messageData);
+    expect(result.message).toEqual("test message");
     expect(nonceModule.validateNonce).toHaveBeenCalledWith(
       baseAuthData.nonce,
       undefined,
@@ -75,7 +67,7 @@ describe("verify", () => {
     });
 
     await expect(verify(authTokenString)).rejects.toThrow(
-      "Public key ownership verification failed"
+      "Public key ownership verification failed",
     );
     expect(cryptoModule.verifySignature).not.toHaveBeenCalled();
   });
@@ -86,7 +78,7 @@ describe("verify", () => {
     );
 
     await expect(verify(authTokenString)).rejects.toThrow(
-      "Public key ownership verification failed"
+      "Public key ownership verification failed",
     );
     expect(cryptoModule.verifySignature).not.toHaveBeenCalled();
   });
@@ -99,7 +91,7 @@ describe("verify", () => {
     });
 
     await expect(verify(authTokenString)).rejects.toThrow(
-      "Public key ownership verification failed"
+      "Public key ownership verification failed",
     );
     expect(cryptoModule.verifySignature).not.toHaveBeenCalled();
   });
@@ -111,7 +103,9 @@ describe("verify", () => {
     });
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
 
-    const result = await verify(authTokenString, { requireFullAccessKey: false });
+    const result = await verify(authTokenString, {
+      requireFullAccessKey: false,
+    });
 
     expect(result.accountId).toBe(baseAuthData.account_id);
     expect(fetch).toHaveBeenCalledWith(
@@ -120,15 +114,11 @@ describe("verify", () => {
   });
 
   it("should use mainnet FastNEAR API for mainnet accounts", async () => {
-    const mainnetMessageData: MessageData = {
-      ...messageData,
-      recipient: "mainnet-recipient.near"
-    };
     const mainnetAuthData: NearAuthData = {
       ...baseAuthData,
       account_id: "user.near",
-      message: JSON.stringify(mainnetMessageData),
-      recipient: "mainnet-recipient.near"
+      message: "test message",
+      recipient: "mainnet-recipient.near",
     };
     const mainnetTokenString = createAuthToken(mainnetAuthData);
 
@@ -153,12 +143,12 @@ describe("verify", () => {
     });
     // Simulate crypto.verifySignature throwing an error for an invalid signature
     vi.spyOn(cryptoModule, "verifySignature").mockRejectedValue(
-      new Error("Underlying crypto lib signature check failed")
+      new Error("Underlying crypto lib signature check failed"),
     );
 
     await expect(verify(authTokenString)).rejects.toThrow(
       // This is the error message from src/auth/verify.ts when it catches an error from crypto.verifySignature
-      "Cryptographic signature verification failed: Underlying crypto lib signature check failed"
+      "Cryptographic signature verification failed: Underlying crypto lib signature check failed",
     );
   });
 
@@ -168,7 +158,7 @@ describe("verify", () => {
     });
 
     await expect(verify(authTokenString)).rejects.toThrow(
-      "Nonce validation failed: Nonce expired"
+      "Nonce validation failed: Nonce expired",
     );
     expect(fetch).not.toHaveBeenCalled();
     expect(cryptoModule.verifySignature).not.toHaveBeenCalled();
@@ -204,35 +194,39 @@ describe("verify", () => {
   });
 
   it("should handle unexpected error during public key decoding", async () => {
-    const faultyMessageData: MessageData = {
-      ...messageData,
-    };
     const faultyAuthData: NearAuthData = {
       ...baseAuthData,
       public_key: "ed25519:InvalidKeyChars$$", // Invalid base58 characters
-      message: JSON.stringify(faultyMessageData),
+      message: JSON.stringify("faultyMessageData"),
     };
     const faultyTokenString = createAuthToken(faultyAuthData);
 
     // Mock fetch to make verifyPublicKeyOwner pass, so we can test PublicKey.fromString failure
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ account_ids: [faultyAuthData.account_id] }), 
+      json: async () => ({ account_ids: [faultyAuthData.account_id] }),
     });
 
     // The error should come from crypto.verifySignature when PublicKey.fromString fails.
-    vi.spyOn(cryptoModule, "verifySignature").mockImplementation(async (hash, sig, pkString) => {
-      if (pkString === faultyAuthData.public_key) { // Use the actual faulty public key
-        // Simulate PublicKey.fromString throwing an error due to invalid characters
-        throw new Error(`Failed to parse public key "${pkString}": BS58_DECODE_FAILURE`);
-      }
-      // Fallback for any other call, though not expected in this specific test
-      throw new Error("verifySignature mock called with unexpected arguments in this test");
-    });
-    
+    vi.spyOn(cryptoModule, "verifySignature").mockImplementation(
+      async (hash, sig, pkString) => {
+        if (pkString === faultyAuthData.public_key) {
+          // Use the actual faulty public key
+          // Simulate PublicKey.fromString throwing an error due to invalid characters
+          throw new Error(
+            `Failed to parse public key "${pkString}": BS58_DECODE_FAILURE`,
+          );
+        }
+        // Fallback for any other call, though not expected in this specific test
+        throw new Error(
+          "verifySignature mock called with unexpected arguments in this test",
+        );
+      },
+    );
+
     await expect(verify(faultyTokenString)).rejects.toThrow(
       // This error comes from src/auth/verify.ts, wrapping the error from crypto.verifySignature
-      `Cryptographic signature verification failed: Failed to parse public key "${faultyAuthData.public_key}": BS58_DECODE_FAILURE`
+      `Cryptographic signature verification failed: Failed to parse public key "${faultyAuthData.public_key}": BS58_DECODE_FAILURE`,
     );
   });
 
@@ -248,18 +242,20 @@ describe("verify", () => {
     });
 
     await expect(verify(authTokenString)).rejects.toThrow(
-      "Public key ownership verification failed"
+      "Public key ownership verification failed",
     );
   });
 
   it("should validate custom nonce validation function", async () => {
     const customValidateNonce = vi.fn().mockReturnValue(false);
-    
-    await expect(verify(authTokenString, { 
-      validateNonce: customValidateNonce 
-    })).rejects.toThrow("Custom nonce validation failed");
-    
-    expect(customValidateNonce).toHaveBeenCalledWith(messageData);
+
+    await expect(
+      verify(authTokenString, {
+        validateNonce: customValidateNonce,
+      }),
+    ).rejects.toThrow("Custom nonce validation failed");
+
+    expect(customValidateNonce).toHaveBeenCalledWith(new Uint8Array(32));
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -269,39 +265,14 @@ describe("verify", () => {
       json: async () => ({ account_ids: [baseAuthData.account_id] }),
     });
 
-    await expect(verify(authTokenString, { 
-      expectedRecipient: "different-recipient.near" 
-    })).rejects.toThrow("Recipient mismatch: expected 'different-recipient.near'");
-    
+    await expect(
+      verify(authTokenString, {
+        expectedRecipient: "different-recipient.near",
+      }),
+    ).rejects.toThrow(
+      "Recipient mismatch: expected 'different-recipient.near'",
+    );
+
     expect(fetch).not.toHaveBeenCalled();
-  });
-
-  it("should reject invalid message structure", async () => {
-    const invalidAuthData: NearAuthData = {
-      ...baseAuthData,
-      message: "invalid json", // Not valid JSON
-    };
-    const invalidTokenString = createAuthToken(invalidAuthData);
-
-    await expect(verify(invalidTokenString)).rejects.toThrow(
-      "Invalid message format in token"
-    );
-  });
-
-  it("should reject message with missing required fields", async () => {
-    const incompleteMessageData = {
-      nonce: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      timestamp: Date.now(),
-      // missing recipient
-    };
-    const incompleteAuthData: NearAuthData = {
-      ...baseAuthData,
-      message: JSON.stringify(incompleteMessageData),
-    };
-    const incompleteTokenString = createAuthToken(incompleteAuthData);
-
-    await expect(verify(incompleteTokenString)).rejects.toThrow(
-      "Invalid message structure: missing or invalid nonce, timestamp, or recipient"
-    );
   });
 });

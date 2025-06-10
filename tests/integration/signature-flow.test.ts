@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { KeyPair, KeyPairString } from "@near-js/crypto";
+import * as near from "near-api-js";
 import { beforeAll, describe, expect, it } from "vitest";
 import {
   generateNonce,
@@ -7,9 +7,8 @@ import {
   SignOptions,
   VerificationResult,
   verify,
-  VerifyOptions
+  VerifyOptions,
 } from "../../src/index.js";
-import { uint8ArrayToBase64 } from "../../src/utils/encoding.js";
 
 dotenv.config();
 
@@ -17,8 +16,8 @@ const SIGNVERIFYTESTS_ACCOUNT_ID = "signverifytests.testnet";
 const FAK_PUBLIC_KEY = "ed25519:BpWbZD6PJkG1FSkpububwAxVx62g4ZGjCtq6TsMCBhmD";
 const FCAK_PUBLIC_KEY = "ed25519:DKFEx1W5rxMNVAnqJ25Cq47Xvys4zZsrJg8bzgT971vt";
 
-let FAK_KEY_PAIR: KeyPair;
-let FCAK_KEY_PAIR: KeyPair;
+let FAK_KEY_PAIR: near.KeyPair;
+let FCAK_KEY_PAIR: near.KeyPair;
 
 describe("NEAR Signature Flow Integration Test", () => {
   beforeAll(() => {
@@ -36,8 +35,12 @@ describe("NEAR Signature Flow Integration Test", () => {
       );
     }
 
-    FAK_KEY_PAIR = KeyPair.fromString(fakSecretKey as KeyPairString);
-    FCAK_KEY_PAIR = KeyPair.fromString(fcakSecretKey as KeyPairString);
+    FAK_KEY_PAIR = near.KeyPair.fromString(
+      fakSecretKey as near.utils.KeyPairString,
+    );
+    FCAK_KEY_PAIR = near.KeyPair.fromString(
+      fcakSecretKey as near.utils.KeyPairString,
+    );
 
     if (FAK_KEY_PAIR.getPublicKey().toString() !== FAK_PUBLIC_KEY) {
       throw new Error("Provided FAK_SECRET_KEY does not match FAK_PUBLIC_KEY.");
@@ -49,21 +52,19 @@ describe("NEAR Signature Flow Integration Test", () => {
     }
   });
 
-
   it("should detect an invalid signature (wrong key used for signing, but claimed accountId)", async () => {
-    const appData = { detail: "Test wrong key" };
     const recipient = "someapp.near";
     const callbackUrl = "https://example.com/wrongkey";
     const specificNonce = generateNonce();
 
     const intendedAccountId = SIGNVERIFYTESTS_ACCOUNT_ID;
-    const wrongKeyPair = KeyPair.fromRandom("ed25519");
+    const wrongKeyPair = near.KeyPair.fromRandom("ed25519");
 
     const signOptions: SignOptions = {
       signer: wrongKeyPair.toString(), // Signing with this wrong key
       accountId: intendedAccountId, // But claiming this account ID
       recipient,
-      data: appData,
+      message: "Test wrong key",
       nonce: specificNonce,
       callbackUrl,
     };
@@ -71,12 +72,11 @@ describe("NEAR Signature Flow Integration Test", () => {
     const authTokenString = await sign(signOptions);
 
     await expect(
-      verify(authTokenString, { expectedRecipient: recipient })
+      verify(authTokenString, { expectedRecipient: recipient }),
     ).rejects.toThrowError(/Public key ownership verification failed/);
   });
 
   it("should succeed when using FAK and requireFullAccessKey: true", async () => {
-    const appData = { detail: "Test with FAK" };
     const recipient = "someapp.near";
     const callbackUrl = "https://example.com/fak";
     const specificNonce = generateNonce();
@@ -85,20 +85,20 @@ describe("NEAR Signature Flow Integration Test", () => {
       signer: FAK_KEY_PAIR.toString(),
       accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
       recipient,
-      data: appData,
+      message: "Test with FAK",
       nonce: specificNonce,
       callbackUrl,
     };
     const authTokenString = await sign(signOptions);
 
-    const verificationResult: VerificationResult = await verify(authTokenString, {
-      expectedRecipient: recipient,
-      // requireFullAccessKey: true is default
-    });
+    const verificationResult: VerificationResult = await verify(
+      authTokenString,
+      {
+        expectedRecipient: recipient,
+        // requireFullAccessKey: true is default
+      },
+    );
     expect(verificationResult.accountId).toBe(SIGNVERIFYTESTS_ACCOUNT_ID);
-    expect(verificationResult.messageData.data).toEqual(appData);
-    expect(verificationResult.messageData.recipient).toBe(recipient);
-    expect(verificationResult.messageData.nonce).toBe(uint8ArrayToBase64(specificNonce));
   });
 
   it("should fail when using FCAK and requireFullAccessKey: true", async () => {
@@ -110,19 +110,21 @@ describe("NEAR Signature Flow Integration Test", () => {
       signer: FCAK_KEY_PAIR.toString(),
       accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
       recipient,
-      data: appData,
+      message: "Test with FCAK, requireFullAccessKey=true",
       nonce: specificNonce,
     };
     const authTokenString = await sign(signOptions);
 
-    const verifyOpts: VerifyOptions = { requireFullAccessKey: true, expectedRecipient: recipient };
+    const verifyOpts: VerifyOptions = {
+      requireFullAccessKey: true,
+      expectedRecipient: recipient,
+    };
     await expect(verify(authTokenString, verifyOpts)).rejects.toThrowError(
-      /Public key ownership verification failed/
+      /Public key ownership verification failed/,
     );
   });
 
   it("should succeed when using FCAK and requireFullAccessKey: false", async () => {
-    const appData = { detail: "Test with FCAK, requireFullAccessKey=false" };
     const recipient = "someapp.near";
     const specificNonce = generateNonce();
 
@@ -130,36 +132,40 @@ describe("NEAR Signature Flow Integration Test", () => {
       signer: FCAK_KEY_PAIR.toString(),
       accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
       recipient,
-      data: appData,
+      message: "Test with FCAK, requireFullAccessKey=false",
       nonce: specificNonce,
     };
     const authTokenString = await sign(signOptions);
 
-    const verifyOpts: VerifyOptions = { requireFullAccessKey: false, expectedRecipient: recipient };
+    const verifyOpts: VerifyOptions = {
+      requireFullAccessKey: false,
+      expectedRecipient: recipient,
+    };
     const verificationResult = await verify(authTokenString, verifyOpts);
     expect(verificationResult.accountId).toBe(SIGNVERIFYTESTS_ACCOUNT_ID);
-    expect(verificationResult.messageData.data).toEqual(appData);
+    expect(verificationResult.message).toEqual(
+      "Test with FCAK, requireFullAccessKey=false",
+    );
   });
 
   it("should fail for a random public key not associated with any account", async () => {
-    const appData = { detail: "Test with random unassociated PK" };
     const recipient = "someapp.near";
     const specificNonce = generateNonce();
     const claimedAccountId = "somerandomuser.testnet";
 
-    const randomKeyPair = KeyPair.fromRandom("ed25519");
+    const randomKeyPair = near.KeyPair.fromRandom("ed25519");
 
     const signOptions: SignOptions = {
       signer: randomKeyPair.toString(),
       accountId: claimedAccountId,
       recipient,
-      data: appData,
+      message: "Test with random unassociated PK",
       nonce: specificNonce,
     };
     const authTokenString = await sign(signOptions);
 
     await expect(
-      verify(authTokenString, { expectedRecipient: recipient })
+      verify(authTokenString, { expectedRecipient: recipient }),
     ).rejects.toThrowError(/Public key ownership verification failed/);
   });
 });

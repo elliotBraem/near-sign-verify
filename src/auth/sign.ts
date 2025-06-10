@@ -1,27 +1,32 @@
 import { fromBase58 } from "@fastnear/utils";
 import { ed25519 } from "@noble/curves/ed25519";
-import { ED25519_PREFIX, hashPayload, serializePayload, TAG } from "../crypto/crypto.js";
+import {
+  ED25519_PREFIX,
+  hashPayload,
+  serializePayload,
+  TAG,
+} from "../crypto/crypto.js";
 import type {
   NearAuthData,
   NearAuthPayload,
   SignOptions,
   WalletInterface,
 } from "../types.js";
-import { createMessage } from "../utils/createMessage.js";
 import { uint8ArrayToBase64 } from "../utils/encoding.js";
+import { generateNonce } from "../utils/nonce.js";
 import { createAuthToken } from "./createAuthToken.js";
 
 interface InternalSignParameters {
-  message: string; // JSON string from createMessage
+  message: string;
   recipient: string;
-  nonce: Uint8Array; // Actual nonce bytes from createMessage
+  nonce: Uint8Array; // Actual nonce bytes
   callbackUrl?: string | null;
 }
 
 async function _signWithKeyPair(
   keyPair: string,
   signerId: string,
-  params: InternalSignParameters
+  params: InternalSignParameters,
 ): Promise<string> {
   const { message, recipient, nonce, callbackUrl } = params;
 
@@ -56,25 +61,39 @@ async function _signWithKeyPair(
 
 async function _signWithWallet(
   wallet: WalletInterface,
-  params: InternalSignParameters
+  params: InternalSignParameters,
 ): Promise<string> {
   const { message, recipient, nonce, callbackUrl } = params;
 
   const walletResult = await wallet.signMessage({
     message,
     nonce,
-    recipient
+    recipient,
   });
+  // walletResult.signature is expected to be a string like "ed25519:Base58EncodedSignature"
+  // walletResult.publicKey is expected to be a string like "ed25519:Base58EncodedPublicKey"
 
-  const actualSignatureB64 = uint8ArrayToBase64(walletResult.signature);
+  const sigParts = walletResult.signature.split(":");
+  if (sigParts.length !== 2 || sigParts[0].toLowerCase() !== "ed25519") {
+    throw new Error(
+      `Unsupported signature format from wallet: ${walletResult.signature}. Expected "ed25519:<base58_signature>"`,
+    );
+  }
+  const base58EncodedSignature = sigParts[1];
+
+  // Decode the Base58 signature to get the raw 64-byte signature
+  const rawSignatureBytes = fromBase58(base58EncodedSignature);
+
+  // Base64 encode the raw signature bytes
+  const actualSignatureB64 = uint8ArrayToBase64(rawSignatureBytes);
 
   const nearAuthDataObject: NearAuthData = {
     account_id: walletResult.accountId,
-    public_key: walletResult.publicKey,
-    signature: actualSignatureB64,
-    message: message,
+    public_key: walletResult.publicKey, // full "ed25519:<base58_pk>" string
+    signature: actualSignatureB64, // Base64 of the *raw* 64-byte signature
+    message: message, // JSON string from createMessage
     // @ts-expect-error Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'
-    nonce,
+    nonce: nonce, // actualNonceBytes (Uint8Array)
     recipient: recipient,
     callback_url: callbackUrl || null,
   };
@@ -83,18 +102,16 @@ async function _signWithWallet(
 }
 
 function detectSignerType(
-  signer: string | WalletInterface
+  signer: string | WalletInterface,
 ): "keypair" | "wallet" {
   if (typeof (signer as WalletInterface).signMessage === "function") {
     return "wallet";
   }
-  if (  
-    (signer as string).startsWith(ED25519_PREFIX)
-  ) {
+  if ((signer as string).startsWith(ED25519_PREFIX)) {
     return "keypair";
   }
   throw new Error(
-    "Invalid signer: must be KeyPair or a wallet object with a signMessage method."
+    "Invalid signer: must be KeyPair or a wallet object with a signMessage method.",
   );
 }
 
@@ -106,20 +123,14 @@ function detectSignerType(
  * @returns A promise that resolves to the final AuthToken string.
  */
 export async function sign(options: SignOptions): Promise<string> {
-  const { signer, accountId, recipient, data, callbackUrl } = options;
+  const { signer, accountId, recipient, message, callbackUrl, nonce } = options;
 
-  // Use the new createMessage helper
-  const { message: structuredMessageString, nonce: actualNonceBytes } =
-    createMessage({
-      recipient: recipient,
-      nonce: options.nonce, // Pass through user-provided nonce if any
-      data: data,
-    });
+  const currentNonce = nonce || generateNonce();
 
   const internalParams: InternalSignParameters = {
-    message: structuredMessageString,
+    message,
     recipient: recipient,
-    nonce: actualNonceBytes,
+    nonce: currentNonce,
     callbackUrl: callbackUrl,
   };
 

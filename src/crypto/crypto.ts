@@ -53,7 +53,7 @@ export function hashPayload(payload: Uint8Array): Uint8Array {
 export async function verifySignature(
   payloadHash: Uint8Array,
   signatureBytes: Uint8Array,
-  publicKeyString: string
+  publicKeyString: string,
 ): Promise<boolean> {
   // let nearPublicKey: Uint8Array;
   // try {
@@ -68,7 +68,7 @@ export async function verifySignature(
     const isValid = ed25519.verify(
       signatureBytes,
       payloadHash,
-      fromBase58(publicKeyString.split(":")[1])
+      fromBase58(publicKeyString.split(":")[1]),
     );
     if (!isValid) {
       throw new Error("Ed25519 signature verification failed.");
@@ -76,7 +76,7 @@ export async function verifySignature(
     return true;
   } else {
     throw new Error(
-      `Unsupported public key type: ${publicKeyString}. Must start with "${ED25519_PREFIX}".`
+      `Unsupported public key type: "${publicKeyString}". Must start with "${ED25519_PREFIX}".`,
     );
   }
 }

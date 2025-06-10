@@ -70,6 +70,8 @@ describe("parseAuthToken - Edge Cases", () => {
 
   it("should handle malformed base64", () => {
     const malformedBase64 = "SGVsbG8gV29ybGQ!"; // Invalid base64 character
-    expect(() => parseAuthToken(malformedBase64)).toThrow("Invalid auth token:");
+    expect(() => parseAuthToken(malformedBase64)).toThrow(
+      "Invalid auth token:",
+    );
   });
 });
