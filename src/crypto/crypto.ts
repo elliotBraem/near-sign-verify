@@ -55,15 +55,6 @@ export async function verifySignature(
   signatureBytes: Uint8Array,
   publicKeyString: string,
 ): Promise<boolean> {
-  // let nearPublicKey: Uint8Array;
-  // try {
-  //   nearPublicKey = fromBase58(publicKeyString.split(":")[1]);
-  // } catch (error) {
-  //   throw new Error(
-  //     `Failed to parse public key "${publicKeyString}": ${error instanceof Error ? error.message : String(error)
-  //     }`
-  //   );
-  // }
   if (publicKeyString.startsWith(ED25519_PREFIX)) {
     const isValid = ed25519.verify(
       signatureBytes,
