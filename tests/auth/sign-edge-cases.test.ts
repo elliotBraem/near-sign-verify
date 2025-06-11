@@ -86,7 +86,8 @@ describe("sign - Edge Cases", () => {
   });
 
   it("should handle KeyPair signing errors (e.g., malformed key string)", async () => {
-    const malformedKeyPairString = "ed25519:ThisIsNotValidBase58AndWillCauseAnErrorDuringDecoding!!!";
+    const malformedKeyPairString =
+      "ed25519:ThisIsNotValidBase58AndWillCauseAnErrorDuringDecoding!!!";
     await expect(
       sign({
         signer: malformedKeyPairString,

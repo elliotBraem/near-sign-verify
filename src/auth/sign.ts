@@ -123,7 +123,7 @@ function detectSignerType(
   if (typeof (signer as WalletInterface).signMessage === "function") {
     return "wallet";
   }
-  if (typeof signer === 'string' && signer.startsWith(ED25519_PREFIX)) {
+  if (typeof signer === "string" && signer.startsWith(ED25519_PREFIX)) {
     return "keypair";
   }
   throw new Error(
