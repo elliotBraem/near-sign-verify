@@ -1,35 +1,26 @@
-/**
- * near-sign-verify
- * NEAR wallet signature generation utility for API authentication
- */
+// --- Core API Functions ---
+export { sign } from "./auth/sign.js";
+export { verify } from "./auth/verify.js";
 
-// Export auth functions
-export { createAuthToken } from "./auth/createAuthToken.js";
-export { verify, VerifyOptions } from "./auth/verify.js";
+// --- Helper Functions ---
 export { parseAuthToken } from "./auth/parseAuthToken.js";
-
-// Export utility functions
 export { generateNonce, validateNonce } from "./utils/nonce.js";
+
+// --- Utility Exports ---
+export { ED25519_PREFIX, TAG } from "./crypto/crypto.js";
 export {
-  stringToUint8Array,
-  uint8ArrayToString,
   base64ToUint8Array,
+  stringToUint8Array,
   uint8ArrayToBase64,
+  uint8ArrayToString,
 } from "./utils/encoding.js";
 
-// Export crypto constants
-export { TAG, ED25519_PREFIX } from "./crypto/crypto.js";
-
-// Export types
+// --- Core Types ---
 export type {
   NearAuthData,
   NearAuthPayload,
-  ValidationResult,
-} from "./types.js";
-
-// Export schemas
-export {
-  NearAuthDataSchema,
-  NearAuthPayloadSchema,
-  ValidationResultSchema,
+  SignOptions,
+  VerificationResult,
+  VerifyOptions,
+  WalletInterface,
 } from "./types.js";

@@ -13,7 +13,6 @@ describe("parseAuthToken", () => {
       nonce: new Uint8Array(32).fill(0),
       recipient: "recipient.near",
       callback_url: "https://example.com/callback",
-      state: "some-state-value",
     };
 
     const token = createAuthToken(authData);
@@ -21,7 +20,6 @@ describe("parseAuthToken", () => {
 
     expect(parsed).toEqual(authData);
     expect(parsed.callback_url).toBe("https://example.com/callback");
-    expect(parsed.state).toBe("some-state-value");
   });
 
   it("should throw an error for invalid token format", () => {

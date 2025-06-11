@@ -1,4 +1,3 @@
-import type { ValidationResult } from "../types.js";
 import { uint8ArrayToBase64 } from "./encoding.js";
 
 /**
@@ -30,16 +29,16 @@ export function generateNonce(): Uint8Array {
  * Validate a nonce
  * @param nonce Nonce as Uint8Array
  * @param maxAge Maximum age of nonce in milliseconds (defaults to 24 hours)
- * @returns Validation result
+ * @throws Error if nonce is invalid
  */
 export function validateNonce(
   nonce: Uint8Array,
   maxAge: number = DEFAULT_MAX_AGE,
-): ValidationResult {
+): void {
   try {
     // Check nonce length
     if (nonce.length !== 32) {
-      return { valid: false, error: "Invalid nonce length" };
+      throw new Error("Invalid nonce length");
     }
 
     // Extract timestamp from first 16 bytes of nonce
@@ -49,23 +48,21 @@ export function validateNonce(
     const timestamp = parseInt(timestampStr, 10);
 
     if (isNaN(timestamp)) {
-      return { valid: false, error: "Invalid timestamp in nonce" };
+      throw new Error("Invalid timestamp in nonce");
     }
 
-    // Check if nonce is expired
+    // Check if nonce is expired or from the future
     const age = Date.now() - timestamp;
-    if (age > maxAge) {
-      return { valid: false, error: "Nonce has expired" };
+    if (age < 0) {
+      throw new Error("Nonce timestamp is in the future");
     }
-
-    return { valid: true };
+    if (age > maxAge) {
+      throw new Error("Nonce has expired");
+    }
   } catch (error) {
-    return {
-      valid: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unknown error validating nonce",
-    };
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Unknown error validating nonce");
   }
 }

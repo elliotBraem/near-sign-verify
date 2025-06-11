@@ -1,26 +1,19 @@
-import bs58 from "bs58";
 import { base64ToUint8Array } from "../utils/encoding.js";
 import { validateNonce } from "../utils/nonce.js";
-import { ED25519_PREFIX, verifySignature } from "../crypto/crypto.js";
-import type { ValidationResult, NearAuthData } from "../types.js";
+import {
+  verifySignature,
+  serializePayload,
+  hashPayload,
+  TAG,
+} from "../crypto/crypto.js";
+import type {
+  NearAuthData,
+  NearAuthPayload,
+  VerifyOptions,
+  VerificationResult,
+} from "../types.js";
+import { parseAuthToken } from "./parseAuthToken.js";
 
-/**
- * Options for the verify function.
- */
-export interface VerifyOptions {
-  /**
-   * Whether the public key must be a full access key.
-   * Defaults to true.
-   */
-  requireFullAccessKey?: boolean;
-  /**
-   * Maximum age of the nonce in milliseconds.
-   * If not provided, validateNonce will use its internal default (e.g., 24 hours).
-   */
-  nonceMaxAge?: number;
-}
-
-// Verifies public key ownership via FastNEAR
 async function verifyPublicKeyOwner(
   accountId: string,
   publicKey: string,
@@ -52,88 +45,103 @@ async function verifyPublicKeyOwner(
 }
 
 /**
- * Verifies NEAR authentication data, including nonce, public key ownership, and cryptographic signature.
- * @param authData The NEAR authentication data.
+ * Verifies a NEAR authentication token string.
+ * This includes parsing the token, validating the message structure,
+ * checking nonce, public key ownership, and the cryptographic signature.
+ * Throws an error if verification fails at any step.
+ * @param authTokenString The Base64 encoded, Borsh-serialized NearAuthData string.
  * @param options Optional verification parameters.
- * @returns A promise that resolves to a ValidationResult.
+ * @returns A promise that resolves to VerificationResult if successful.
  */
 export async function verify(
-  authData: NearAuthData,
+  authTokenString: string,
   options?: VerifyOptions,
-): Promise<ValidationResult> {
+): Promise<VerificationResult> {
+  let authData: NearAuthData;
+  try {
+    authData = parseAuthToken(authTokenString);
+  } catch (e: any) {
+    throw new Error(`Failed to parse auth token: ${e.message}`);
+  }
+
   const {
     account_id: accountId,
     public_key: publicKey,
-    signature,
-    message,
-    nonce,
-    recipient,
+    signature: signatureB64,
+    message: messageString,
+    nonce: nonceFromAuthData, // nonce from the NearAuthPayload
+    recipient: recipientFromAuthData,
+    callback_url,
   } = authData;
 
+  // Nonce validation
+  if (options && "validateNonce" in options && options.validateNonce) {
+    // Custom nonce validation
+    if (!options.validateNonce(nonceFromAuthData)) {
+      throw new Error("Custom nonce validation failed.");
+    }
+  } else {
+    // Standard nonce validation using nonce from AuthData (which was part of the signed payload)
+    try {
+      validateNonce(nonceFromAuthData, options?.nonceMaxAge);
+    } catch (error) {
+      throw new Error(
+        `Nonce validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
+
+  // Validate expected recipient if provided
+  if (
+    options?.expectedRecipient &&
+    recipientFromAuthData !== options.expectedRecipient
+  ) {
+    throw new Error(
+      `Recipient mismatch: expected '${options.expectedRecipient}', but recipient is '${recipientFromAuthData}'.`,
+    );
+  }
+
   const requireFullAccessKey = options?.requireFullAccessKey ?? true;
-  const nonceMaxAge = options?.nonceMaxAge;
+  const ownerCheckResult = await verifyPublicKeyOwner(
+    accountId,
+    publicKey,
+    requireFullAccessKey,
+  );
+
+  if (!ownerCheckResult.success) {
+    const reason = ownerCheckResult.apiFailure
+      ? "API error or unexpected response"
+      : "public key not associated with the account or does not meet access key requirements";
+    throw new Error(`Public key ownership verification failed: ${reason}.`);
+  }
+
+  // Reconstruct the payload that was originally signed
+  const payloadToVerify: NearAuthPayload = {
+    tag: TAG,
+    message: messageString,
+    nonce: nonceFromAuthData, // The nonce that was part of the signed payload
+    receiver: recipientFromAuthData, // The recipient that was part of the signed payload
+    callback_url: callback_url || undefined,
+  };
+
+  const serializedPayloadToVerify = serializePayload(payloadToVerify);
+  const payloadHash = hashPayload(serializedPayloadToVerify);
+  const signatureBytes = base64ToUint8Array(signatureB64);
 
   try {
-    const nonceValidation = validateNonce(nonce, nonceMaxAge);
-    if (!nonceValidation.valid) {
-      return nonceValidation;
-    }
-
-    const ownerCheckResult = await verifyPublicKeyOwner(
-      accountId,
-      publicKey,
-      requireFullAccessKey,
-    );
-
-    if (!ownerCheckResult.success) {
-      if (ownerCheckResult.apiFailure) {
-        return {
-          valid: false,
-          error: "Failed to verify public key ownership with external API.",
-        };
-      }
-      return {
-        valid: false,
-        error:
-          "Public key does not belong to the specified account or does not meet access requirements.",
-      };
-    }
-
-    const signatureBytes = base64ToUint8Array(signature);
-    const publicKeyString = publicKey.startsWith(ED25519_PREFIX)
-      ? publicKey.substring(ED25519_PREFIX.length)
-      : publicKey;
-    const publicKeyBytes = bs58.decode(publicKeyString);
-
-    try {
-      const isValidCryptoSignature = await verifySignature(
-        message,
-        signatureBytes,
-        publicKeyBytes,
-        nonce,
-        recipient,
-      );
-
-      return {
-        valid: isValidCryptoSignature,
-        error: isValidCryptoSignature ? undefined : "Invalid signature",
-      };
-    } catch (error) {
-      return {
-        valid: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unknown error validating signature",
-      };
-    }
+    await verifySignature(payloadHash, signatureBytes, publicKey);
   } catch (error) {
-    return {
-      valid: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unknown error during verification process",
-    };
+    throw new Error(
+      `Cryptographic signature verification failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
   }
+
+  return {
+    accountId: accountId,
+    message: messageString,
+    publicKey: publicKey,
+    callbackUrl: callback_url || undefined,
+  };
 }
