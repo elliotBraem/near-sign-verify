@@ -21,7 +21,7 @@ const authToken = await sign({
   signer: keyPair.toString(),
   accountId: "you.near", // PubKey owner (you can pretend)
   recipient: "your-service.near",
-  data: { customInfo: "login attempt" } // whatever data you wanna pass
+  message: "login attempt"
 });
 
 // --- Send request with the token ---
@@ -51,20 +51,18 @@ try {
 }
 ```
 
-## with Wallet
+## with fastintear
+
+Uses [fastintear](https://github.com/elliotBraem/fastintear), an expirmental fork of [@fastnear/js-monorepo](https://github.com/fastnear/js-monorepo) -- an alternative to [near-api-js](https://github.com/near/near-api-js) and [near-wallet-selector](https://github.com/near/wallet-selector).
 
 ```typescript
+import * as near from "fastintear";
 import { sign, verify } from 'near-sign-verify';
 
-// use your wallet, wherever it comes from...
-const wallet = near // fastnear-js or fastintear
-const wallet = await (await this.selector).wallet(); // near-wallet-selector
-const { wallet } = useWalletSelector();
-
 const authToken = await sign({
-  signer: wallet, // has a signMessage function
+  signer: near, // has a signMessage function
   recipient: 'app.near',
-  data: { ... }
+  message: "login attempt" // whatever message, can be validated on backend
 });
 
 // --- Send request with the token ---
@@ -105,7 +103,7 @@ const authToken = await sign({
   signer: wallet,
   recipient: "your-service.near",
   nonce: 1, // your nonce override
-  data: { customInfo: "login attempt" } // whatever data you wanna pass
+  message: "do something" // whatever message, can be validated on backend
 })
 
 try {
@@ -116,6 +114,8 @@ try {
       return true;
     }
   });
+  // optionally validate the message
+  const message = result.message;
 } catch {
   // failed
 }
