@@ -17,8 +17,11 @@ export {
 
 // --- Core Types ---
 export type {
-  NearAuthData,
-  NearAuthPayload,
+  // NEP-413 Aligned Types
+  SignMessageParams,
+  SignedMessage,
+  SignedPayload,
+  // Library's main API types
   SignOptions,
   VerificationResult,
   VerifyOptions,

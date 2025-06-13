@@ -1,166 +1,103 @@
-import { z } from "zod";
+/** NEP-413: Parameters for the wallet's signMessage method. */
+export interface SignMessageParams {
+  message: string; // The message that wants to be transmitted (must be string for NEP-413 payload).
+  recipient: string; // The recipient to whom the message is destined.
+  nonce: Uint8Array; // A nonce that uniquely identifies this instance (32 bytes).
+  callbackUrl?: string; // Optional URL to call after signing.
+  state?: string; // Optional state for authentication purposes.
+}
 
-/**
- * Options for the main `sign` function.
- */
-export interface SignOptions {
-  /**
-   * The signer, which can be a NEAR KeyPair or a wallet object.
-   * The library will detect the type at runtime.
-   */
-  signer: string | WalletInterface;
-  /**
-   * The NEAR account ID of the intended signer.
-   * Required if `signer` is a KeyPair. Ignored if `signer` is a wallet
-   * (as the wallet will provide the accountId).
-   */
-  accountId?: string;
-  /**
-   * The intended recipient of the signed message or action.
-   * This will be included in the structured message and the signed payload.
-   */
+/** NEP-413: Output from the wallet's signMessage method. */
+export interface SignedMessage {
+  accountId: string; // Account ID that signed.
+  publicKey: string; // Public key used for signing ("ed25519:<bs58>").
+  signature: string; // Base64 representation of the raw Ed25519 signature.
+  state?: string; // Optional state passed through.
+}
+
+/** NEP-413: The structure whose Borsh representation (prepended with TAG) is hashed and signed. */
+export interface SignedPayload {
+  message: string; // Serialized version of the user's original message.
+  nonce: Uint8Array;
   recipient: string;
-  /**
-   * Message to sign, can be application specific data.
-   */
-  message: string;
-  /**
-   * Optional 32-byte nonce as a Uint8Array.
-   * If not provided, a nonce will be generated.
-   */
-  nonce?: Uint8Array;
-  /**
-   * Optional callback URL string.
-   * If provided, it will be included in the signed payload.
-   */
-  callbackUrl?: string | null;
+  callbackUrl?: string;
 }
 
-/**
- * Options for the main `verify` function.
- */
-export type VerifyOptions = {
-  /**
-   * Whether the public key used for signing must be a Full Access Key.
-   * Defaults to true. If false, Function Call Access Keys are permitted
-   * provided they have permission for the `recipient`.
-   */
-  requireFullAccessKey?: boolean;
-  /**
-   * If provided, the `recipient` field in the verified message
-   * must exactly match this string.
-   */
+// --- New types for the refactored sign function ---
+
+/** Input payload for the sign function, containing the core data to be signed. */
+export interface SignerMessagePayload<TMessage = string> {
+  message: TMessage; // User's original message (can be structured).
+  recipient: string; // The recipient to whom the message is destined.
+}
+
+/** Options for the sign function, specifying the signer and other signing parameters. */
+export interface SignerOptions {
+  signer: string | WalletInterface; // KeyPair string or a NEP-413 compliant wallet.
+  accountId?: string; // Required if signer is KeyPair.
+  nonce?: Uint8Array | number; // Library can convert number to a default nonce format if needed.
+  state?: string; // Passed through, not part of SignedPayload for hashing, but included in SignMessageParams for wallet.
+  callbackUrl?: string | null;
+  /** Custom serializer for TMessage to string. Defaults to JSON.stringify if TMessage is not a string. */
+  messageSerializer?: (message: any) => string; // 'any' because TMessage is on SignerMessagePayload
+}
+// --- End of new types for sign function ---
+
+
+// Library's public API types (VerifyOptions and VerificationResult remain largely the same)
+export interface VerifyOptions<TMessage = any> {
   expectedRecipient?: string;
-} & (
-  | {
-      /**
-       * Maximum age of the nonce in milliseconds.
-       * If not provided, a default value (e.g., 24 hours) will be used.
-       * This option is mutually exclusive with `validateNonce`.
-       */
-      nonceMaxAge?: number;
-      validateNonce?: never; // Ensures validateNonce is not provided with nonceMaxAge
-    }
-  | {
-      /**
-       * A custom function to validate the nonce.
-       * Should return true if the nonce is valid, false otherwise.
-       * This option is mutually exclusive with `nonceMaxAge`.
-       */
-      validateNonce: (nonce: Uint8Array) => boolean;
-      nonceMaxAge?: never; // Ensures nonceMaxAge is not provided with validateNonce
-    }
-);
+  validateRecipient?: (recipient: string) => boolean;
+  requireFullAccessKey?: boolean; // Defaults to true.
+  nonceMaxAge?: number; // For default time-based nonce validation.
+  validateNonce?: (nonce: Uint8Array) => boolean; // For custom nonce validation.
+  expectedState?: string; // For simple state equality check.
+  validateState?: (state?: string) => boolean; // For custom state validation.
+  /** Custom parser for the 'original_message_string' from the token. Defaults to JSON.parse. */
+  messageParser?: (messageString: string) => TMessage;
+}
 
-/**
- * The result of a successful verification.
- */
-export interface VerificationResult {
-  /** The NEAR account ID that was successfully authenticated. */
+export interface VerificationResult<TMessage = any> {
   accountId: string;
-  /** The parsed message from the verified token. */
-  message: string;
-  /** The public key string used for the signature. */
   publicKey: string;
-  /** The callback URL from the token, if present. */
-  callbackUrl?: string | null;
+  message: TMessage; // The original, potentially structured, message.
+  callbackUrl?: string;
+  state?: string;
 }
 
-/**
- * Defines the interface for a wallet signer.
- * This allows for duck-typing of wallet objects.
- */
+// Wallet Interface
 export interface WalletInterface {
-  signMessage: (messageToSign: {
-    message: string;
-    recipient: string;
-    nonce: Uint8Array<ArrayBufferLike>;
-  }) => Promise<{
-    signature: string;
-    publicKey: string;
-    accountId: string;
-  }>;
+  /** Must conform to NEP-413 signMessage specification. */
+  signMessage: (params: SignMessageParams) => Promise<SignedMessage>;
 }
 
-// --- Existing Internal Types (may need review/adjustment) ---
-
-/**
- * Type for raw deserialized Borsh data from the auth token.
- * This is what `parseAuthToken` initially deserializes to.
- */
-export interface BorshNearAuthData {
+/** Data structure encoded within the library's authTokenString. */
+export interface NearAuthTokenPayload {
   account_id: string;
   public_key: string;
-  signature: string; // Base64 encoded signature of the hashed NearAuthPayload
-  message: string;
-  nonce: number[]; // Borsh representation of Uint8Array
-  recipient: string; // Recipient from the SignOptions, part of NearAuthPayload
-  callback_url: string | null;
+  signature: string; // Base64 of raw signature
+
+  // Fields that were part of the signed SignedPayload
+  signed_message_content: string; // This is SignedPayload.message
+  signed_nonce: Uint8Array;       // This is SignedPayload.nonce
+  signed_recipient: string;     // This is SignedPayload.recipient
+  signed_callback_url?: string;  // This is SignedPayload.callbackUrl
+
+  // Additional metadata for the token (not part of the signature hash)
+  state?: string | null;
+  // To reconstruct the original TMessage if it was not a simple string.
+  original_message_representation?: string;
 }
 
-/**
- * Zod schema for validating and transforming BorshNearAuthData.
- * This is used by `parseAuthToken`.
- */
-export const NearAuthDataSchema = z.object({
-  account_id: z.string(),
-  public_key: z.string(),
-  signature: z.string(),
-  message: z.string(),
-  nonce: z.union([
-    // Nonce from the NearAuthPayload
-    z.instanceof(Uint8Array),
-    z.array(z.number()).transform((arr) => new Uint8Array(arr)),
-  ]),
-  recipient: z.string(), // Recipient from the NearAuthPayload
-  callback_url: z.string().nullable().optional(),
-});
-
-/**
- * Represents the fully parsed and validated data from an auth token.
- * This is the output type of `parseAuthToken`.
- */
-export type NearAuthData = z.infer<typeof NearAuthDataSchema>;
-
-/**
- * Represents the canonical payload that is Borsh-serialized, hashed, and then signed.
- * This structure is internal to the signing and verification process.
- */
-export interface NearAuthPayload {
-  tag: number; // A constant tag (e.g., 2147484061 from crypto.ts)
-  message: string;
-  nonce: Uint8Array; // The actual nonce bytes
-  receiver: string; // The recipient
-  callback_url?: string; // Optional callback URL
-}
-
-// Zod schema for NearAuthPayload might be useful for internal validation if needed,
-// but it's primarily an interface for structuring data before Borsh serialization.
-// For now, an interface is sufficient.
-
-// Old ValidationResult type - replaced by VerificationResult or throwing errors.
-// export const ValidationResultSchema = z.object({
-//   valid: z.boolean(),
-//   error: z.string().optional(),
-// });
-// export type ValidationResult = z.infer<typeof ValidationResultSchema>;
+// --- Deprecated SignOptions from previous structure ---
+// This is now replaced by SignerMessagePayload and SignerOptions
+// export interface OldSignOptions<TMessage = string> {
+//   signer: string | WalletInterface;
+//   accountId?: string;
+//   recipient: string;
+//   message: TMessage;
+//   callbackUrl?: string | null;
+//   nonce?: Uint8Array | number;
+//   state?: string;
+//   messageSerializer?: (message: TMessage) => string;
+// }
