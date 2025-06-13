@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
-import * as near from "near-api-js";
+// import * as near from "near-api-js"; // this works
+import { KeyPair, KeyPairString } from "@near-js/crypto"; // this does not
 import { beforeAll, describe, expect, it } from "vitest";
 import {
   generateNonce,
@@ -16,8 +17,8 @@ const SIGNVERIFYTESTS_ACCOUNT_ID = "signverifytests.testnet";
 const FAK_PUBLIC_KEY = "ed25519:BpWbZD6PJkG1FSkpububwAxVx62g4ZGjCtq6TsMCBhmD";
 const FCAK_PUBLIC_KEY = "ed25519:DKFEx1W5rxMNVAnqJ25Cq47Xvys4zZsrJg8bzgT971vt";
 
-let FAK_KEY_PAIR: near.KeyPair;
-let FCAK_KEY_PAIR: near.KeyPair;
+let FAK_KEY_PAIR: KeyPair;
+let FCAK_KEY_PAIR: KeyPair;
 
 describe("NEAR Signature Flow Integration Test", () => {
   beforeAll(() => {
@@ -35,11 +36,11 @@ describe("NEAR Signature Flow Integration Test", () => {
       );
     }
 
-    FAK_KEY_PAIR = near.KeyPair.fromString(
-      fakSecretKey as near.utils.KeyPairString,
+    FAK_KEY_PAIR = KeyPair.fromString(
+      fakSecretKey as KeyPairString,
     );
-    FCAK_KEY_PAIR = near.KeyPair.fromString(
-      fcakSecretKey as near.utils.KeyPairString,
+    FCAK_KEY_PAIR = KeyPair.fromString(
+      fcakSecretKey as KeyPairString,
     );
 
     if (FAK_KEY_PAIR.getPublicKey().toString() !== FAK_PUBLIC_KEY) {
@@ -58,7 +59,7 @@ describe("NEAR Signature Flow Integration Test", () => {
     const specificNonce = generateNonce();
 
     const intendedAccountId = SIGNVERIFYTESTS_ACCOUNT_ID;
-    const wrongKeyPair = near.KeyPair.fromRandom("ed25519");
+    const wrongKeyPair = KeyPair.fromRandom("ed25519");
 
     const signOptions: SignOptions = {
       signer: wrongKeyPair.toString(), // Signing with this wrong key
@@ -153,7 +154,7 @@ describe("NEAR Signature Flow Integration Test", () => {
     const specificNonce = generateNonce();
     const claimedAccountId = "somerandomuser.testnet";
 
-    const randomKeyPair = near.KeyPair.fromRandom("ed25519");
+    const randomKeyPair = KeyPair.fromRandom("ed25519");
 
     const signOptions: SignOptions = {
       signer: randomKeyPair.toString(),
