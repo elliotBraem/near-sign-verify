@@ -1,6 +1,6 @@
 {
   "name": "near-sign-verify",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Creates and validates NEAR signatures for API authentication.",
   "type": "module",
   "main": "dist/index.js",
@@ -17,7 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "build": "tsup src/index.ts --format cjs,esm --dts --minify --sourcemap",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "lint": "eslint src --ext .ts",
     "fmt": "prettier --write '**/*.{js,jsx,ts,tsx,json}'",
@@ -56,5 +56,6 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "sideEffects": false
 }
