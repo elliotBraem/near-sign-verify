@@ -61,7 +61,7 @@ describe("Crypto Module - Edge Cases & Core Functionality", () => {
       const malformedKey = ED25519_PREFIX + "invalidKeyData"; // "l" is an invalid base58 char
       await expect(
         verifySignature(testPayloadHash, ed25519Signature, malformedKey),
-      ).rejects.toThrow(/Invalid base58 character/);
+      ).rejects.toThrow(/Unknown letter: "l". Allowed: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz/);
     });
 
     it("should throw for invalid Ed25519 signature", async () => {
@@ -92,7 +92,7 @@ describe("Crypto Module - Edge Cases & Core Functionality", () => {
       const payload: NearAuthPayload = {
         tag: 2147484061,
         message: "test message",
-        nonce: new Uint8Array(32).fill(1),
+        nonce: new Array(32).fill(1),
         receiver: "test.near",
         callback_url: "https://example.com/callback",
       };
@@ -102,10 +102,11 @@ describe("Crypto Module - Edge Cases & Core Functionality", () => {
     });
 
     it("should serialize payload without optional callback_url", () => {
+      // @ts-expect-error we're specifically testing a missing field
       const payload: NearAuthPayload = {
         tag: 2147484061,
         message: "test message",
-        nonce: new Uint8Array(32).fill(1),
+        nonce: new Array(32).fill(1),
         receiver: "test.near",
         // callback_url is undefined
       };

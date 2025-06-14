@@ -1,8 +1,8 @@
+import { base58 } from "@scure/base";
+import * as near from "near-api-js";
 import { describe, expect, it, vi } from "vitest";
 import { sign } from "../../src/auth/sign.js";
-import * as near from "near-api-js";
 import type { WalletInterface } from "../../src/types.js";
-import { toBase58 } from "@fastnear/utils";
 
 describe("sign - Edge Cases", () => {
   it("should throw error when accountId is missing for KeyPair signer", async () => {
@@ -20,7 +20,7 @@ describe("sign - Edge Cases", () => {
   it("should throw error for invalid signer type", async () => {
     const invalidSigner = {
       // Missing both KeyPair methods and WalletInterface methods
-      someOtherMethod: () => {},
+      someOtherMethod: () => { },
     } as any;
 
     await expect(
@@ -37,7 +37,7 @@ describe("sign - Edge Cases", () => {
 
   it("should throw error for object with only partial KeyPair interface", async () => {
     const partialKeyPair = {
-      sign: () => {}, // Has sign but missing getPublicKey
+      sign: () => { }, // Has sign but missing getPublicKey
     } as any;
 
     await expect(
@@ -54,7 +54,7 @@ describe("sign - Edge Cases", () => {
 
   it("should throw error for object with only partial WalletInterface", async () => {
     const partialWallet = {
-      someMethod: () => {}, // Missing signMessage
+      someMethod: () => { }, // Missing signMessage
     } as any;
 
     await expect(
@@ -95,12 +95,12 @@ describe("sign - Edge Cases", () => {
         message: "hello",
         recipient: "recipient.near",
       }),
-    ).rejects.toThrow(/Invalid base58 character/);
+    ).rejects.toThrow(/Unknown letter: "I". Allowed: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz/);
   });
 
   it("should work with wallet that provides accountId", async () => {
     const rawSignature = new Uint8Array(64).fill(1);
-    const base58Signature = toBase58(rawSignature);
+    const base58Signature = base58.encode(rawSignature);
     const mockWallet: WalletInterface = {
       signMessage: vi.fn().mockResolvedValue({
         signature: `ed25519:${base58Signature}`,

@@ -1,8 +1,8 @@
-import { fromBase58 } from "@fastnear/utils";
 import { ed25519 } from "@noble/curves/ed25519";
 import { sha256 } from "@noble/hashes/sha2";
 import { NearAuthPayloadSchema } from "../schemas.js";
 import type { NearAuthPayload } from "../types.js";
+import { base58 } from "@scure/base";
 
 export const ED25519_PREFIX = "ed25519:";
 export const TAG = 2147484061;
@@ -41,7 +41,7 @@ export async function verifySignature(
     const isValid = ed25519.verify(
       signatureBytes,
       payloadHash,
-      fromBase58(publicKeyString.split(":")[1]),
+      base58.decode(publicKeyString.split(":")[1]),
     );
     if (!isValid) {
       throw new Error("Ed25519 signature verification failed.");

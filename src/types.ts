@@ -1,4 +1,3 @@
-import { z } from "zod";
 export { NearAuthPayload, NearAuthData } from "./schemas.js";
 
 /**
@@ -102,10 +101,3 @@ export interface WalletInterface {
     accountId: string;
   }>;
 }
-
-// Old ValidationResult type - replaced by VerificationResult or throwing errors.
-// export const ValidationResultSchema = z.object({
-//   valid: z.boolean(),
-//   error: z.string().optional(),
-// });
-// export type ValidationResult = z.infer<typeof ValidationResultSchema>;

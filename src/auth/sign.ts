@@ -1,6 +1,5 @@
-import { fromBase58, toBase58 } from "@fastnear/utils";
 import { ed25519 } from "@noble/curves/ed25519";
-import { base64 } from "@scure/base";
+import { base64, base58 } from "@scure/base";
 import {
   ED25519_PREFIX,
   TAG,
@@ -45,7 +44,7 @@ async function _signWithKeyPair(
     throw new Error("Invalid KeyPair format: missing ed25519 prefix.");
   }
   const privateKeyBase58 = keyPair.substring(ED25519_PREFIX.length);
-  const privateKeyBytes = fromBase58(privateKeyBase58);
+  const privateKeyBytes = base58.decode(privateKeyBase58);
 
   if (privateKeyBytes.length !== 64) {
     throw new Error(
@@ -59,7 +58,7 @@ async function _signWithKeyPair(
   const actualSignatureB64 = base64.encode(signedResult);
 
   const publicKeyBytes = ed25519.getPublicKey(seed);
-  const publicKeyString = ED25519_PREFIX + toBase58(publicKeyBytes);
+  const publicKeyString = ED25519_PREFIX + base58.encode(publicKeyBytes);
 
   const nearAuthDataObject: NearAuthData = {
     account_id: signerId,
@@ -97,7 +96,7 @@ async function _signWithWallet(
   const base58EncodedSignature = sigParts[1];
 
   // Decode the Base58 signature to get the raw 64-byte signature
-  const rawSignatureBytes = fromBase58(base58EncodedSignature);
+  const rawSignatureBytes = base58.decode(base58EncodedSignature);
 
   // Base64 encode the raw signature bytes
   const actualSignatureB64 = base64.encode(rawSignatureBytes);

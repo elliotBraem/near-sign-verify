@@ -1,6 +1,6 @@
 {
   "name": "near-sign-verify",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Creates and validates NEAR signatures for API authentication.",
   "type": "module",
   "main": "dist/index.js",
@@ -37,12 +37,10 @@
   "author": "elliotBraem",
   "license": "MIT",
   "dependencies": {
-    "@fastnear/utils": "^0.9.7",
     "@noble/curves": "^1.9.1",
     "@noble/hashes": "^1.8.0",
     "@scure/base": "^1.2.6",
-    "@zorsh/zorsh": "^0.3.3",
-    "zod": "^3.24.2"
+    "@zorsh/zorsh": "^0.3.3"
   },
   "devDependencies": {
     "near-api-js": "^5.1.1",
@@ -54,7 +52,6 @@
     "rimraf": "^5.0.5",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",
-    "vi-fetch": "^0.8.0",
     "vitest": "^1.2.1"
   },
   "publishConfig": {
