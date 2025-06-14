@@ -1,4 +1,3 @@
-import { uint8ArrayToBase64 } from "./encoding.js";
 
 /**
  * Default max age for nonce validation (24 hours in milliseconds)
