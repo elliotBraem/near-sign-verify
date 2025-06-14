@@ -10,7 +10,6 @@ import {
   VerificationResult,
   verify,
 } from "../../src/index.js";
-import { uint8ArrayToBase64 } from "../../src/utils/encoding.js";
 
 dotenv.config();
 
@@ -77,8 +76,8 @@ describe("Sign Function", () => {
     expect(parsedNearAuthData.public_key).toBe(FCAK_PUBLIC_KEY_STR);
     expect(parsedNearAuthData.recipient).toBe(recipient);
     expect(parsedNearAuthData.callback_url).toBe(callbackUrl);
-    expect(uint8ArrayToBase64(parsedNearAuthData.nonce)).toBe(
-      uint8ArrayToBase64(specificNonce),
+    expect(new Uint8Array(parsedNearAuthData.nonce)).toStrictEqual(
+      specificNonce,
     );
   });
 
@@ -109,7 +108,6 @@ describe("Sign Function", () => {
 
     // Check raw parsed data
     const parsedNearAuthData: NearAuthData = parseAuthToken(authTokenString);
-    expect(parsedNearAuthData.nonce).toBeInstanceOf(Uint8Array);
     expect(parsedNearAuthData.nonce.length).toBe(32);
   });
 });
