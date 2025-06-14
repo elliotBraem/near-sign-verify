@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAuthToken } from "../../src/auth/createAuthToken.js";
 import { verify } from "../../src/auth/verify.js";
 import * as cryptoModule from "../../src/crypto/crypto.js";
-import type { NearAuthData } from "../../src/types.js";
+import type { NearAuthData } from "../../src/schemas.js";
 import * as nonceModule from "../../src/utils/nonce.js";
 
 // Mock dependencies
@@ -18,10 +18,12 @@ describe("verify - Edge Cases", () => {
   const baseAuthData: NearAuthData = {
     account_id: "testuser.testnet",
     public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
-    signature: "base64signature",
+    signature:
+      "YN7xw5bhbD2VzrOlyyGwKKEaCBsuCVO9vu1AY1GkqQRRfOL2JNTjUUxJXp9KfC2nmA2xvytDdUzel0vmr/VDuA==",
     message: "test message",
-    nonce: testNonce,
+    nonce: Array.from(testNonce),
     recipient: "recipient.near",
+    callback_url: null,
   };
 
   beforeEach(() => {

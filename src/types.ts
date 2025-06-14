@@ -1,4 +1,5 @@
 import { z } from "zod";
+export { NearAuthPayload, NearAuthData } from "./schemas.js";
 
 /**
  * Options for the main `sign` function.
@@ -101,62 +102,6 @@ export interface WalletInterface {
     accountId: string;
   }>;
 }
-
-// --- Existing Internal Types (may need review/adjustment) ---
-
-/**
- * Type for raw deserialized Borsh data from the auth token.
- * This is what `parseAuthToken` initially deserializes to.
- */
-export interface BorshNearAuthData {
-  account_id: string;
-  public_key: string;
-  signature: string; // Base64 encoded signature of the hashed NearAuthPayload
-  message: string;
-  nonce: number[]; // Borsh representation of Uint8Array
-  recipient: string; // Recipient from the SignOptions, part of NearAuthPayload
-  callback_url: string | null;
-}
-
-/**
- * Zod schema for validating and transforming BorshNearAuthData.
- * This is used by `parseAuthToken`.
- */
-export const NearAuthDataSchema = z.object({
-  account_id: z.string(),
-  public_key: z.string(),
-  signature: z.string(),
-  message: z.string(),
-  nonce: z.union([
-    // Nonce from the NearAuthPayload
-    z.instanceof(Uint8Array),
-    z.array(z.number()).transform((arr) => new Uint8Array(arr)),
-  ]),
-  recipient: z.string(), // Recipient from the NearAuthPayload
-  callback_url: z.string().nullable().optional(),
-});
-
-/**
- * Represents the fully parsed and validated data from an auth token.
- * This is the output type of `parseAuthToken`.
- */
-export type NearAuthData = z.infer<typeof NearAuthDataSchema>;
-
-/**
- * Represents the canonical payload that is Borsh-serialized, hashed, and then signed.
- * This structure is internal to the signing and verification process.
- */
-export interface NearAuthPayload {
-  tag: number; // A constant tag (e.g., 2147484061 from crypto.ts)
-  message: string;
-  nonce: Uint8Array; // The actual nonce bytes
-  receiver: string; // The recipient
-  callback_url?: string; // Optional callback URL
-}
-
-// Zod schema for NearAuthPayload might be useful for internal validation if needed,
-// but it's primarily an interface for structuring data before Borsh serialization.
-// For now, an interface is sufficient.
 
 // Old ValidationResult type - replaced by VerificationResult or throwing errors.
 // export const ValidationResultSchema = z.object({

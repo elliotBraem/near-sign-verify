@@ -1,17 +1,17 @@
-import { base64ToUint8Array } from "../utils/encoding.js";
-import { validateNonce } from "../utils/nonce.js";
+import { base64 } from "@scure/base";
 import {
-  verifySignature,
-  serializePayload,
-  hashPayload,
   TAG,
+  hashPayload,
+  serializePayload,
+  verifySignature,
 } from "../crypto/crypto.js";
 import type {
   NearAuthData,
   NearAuthPayload,
-  VerifyOptions,
   VerificationResult,
+  VerifyOptions,
 } from "../types.js";
+import { validateNonce } from "../utils/nonce.js";
 import { parseAuthToken } from "./parseAuthToken.js";
 
 async function verifyPublicKeyOwner(
@@ -74,16 +74,18 @@ export async function verify(
     callback_url,
   } = authData;
 
-  // Nonce validation
+  // Nonce validation - convert number[] back to Uint8Array for validation functions
+  const nonceAsUint8Array = new Uint8Array(nonceFromAuthData);
+
   if (options && "validateNonce" in options && options.validateNonce) {
     // Custom nonce validation
-    if (!options.validateNonce(nonceFromAuthData)) {
+    if (!options.validateNonce(nonceAsUint8Array)) {
       throw new Error("Custom nonce validation failed.");
     }
   } else {
     // Standard nonce validation using nonce from AuthData (which was part of the signed payload)
     try {
-      validateNonce(nonceFromAuthData, options?.nonceMaxAge);
+      validateNonce(nonceAsUint8Array, options?.nonceMaxAge);
     } catch (error) {
       throw new Error(
         `Nonce validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -121,12 +123,12 @@ export async function verify(
     message: messageString,
     nonce: nonceFromAuthData, // The nonce that was part of the signed payload
     receiver: recipientFromAuthData, // The recipient that was part of the signed payload
-    callback_url: callback_url || undefined,
+    callback_url: callback_url || null,
   };
 
   const serializedPayloadToVerify = serializePayload(payloadToVerify);
   const payloadHash = hashPayload(serializedPayloadToVerify);
-  const signatureBytes = base64ToUint8Array(signatureB64);
+  const signatureBytes = base64.decode(signatureB64);
 
   try {
     await verifySignature(payloadHash, signatureBytes, publicKey);

@@ -1,10 +1,11 @@
 import { fromBase58, toBase58 } from "@fastnear/utils";
 import { ed25519 } from "@noble/curves/ed25519";
+import { base64 } from "@scure/base";
 import {
   ED25519_PREFIX,
+  TAG,
   hashPayload,
   serializePayload,
-  TAG,
 } from "../crypto/crypto.js";
 import type {
   NearAuthData,
@@ -12,7 +13,6 @@ import type {
   SignOptions,
   WalletInterface,
 } from "../types.js";
-import { uint8ArrayToBase64 } from "../utils/encoding.js";
 import { generateNonce } from "../utils/nonce.js";
 import { createAuthToken } from "./createAuthToken.js";
 
@@ -33,9 +33,9 @@ async function _signWithKeyPair(
   const payloadToSerialize: NearAuthPayload = {
     tag: TAG,
     message: message,
-    nonce,
+    nonce: Array.from(nonce), // Convert Uint8Array to number[] for zorsh
     receiver: recipient,
-    callback_url: callbackUrl || undefined,
+    callback_url: callbackUrl || null,
   };
 
   const serializedPayload = serializePayload(payloadToSerialize);
@@ -56,7 +56,7 @@ async function _signWithKeyPair(
 
   const signedResult = ed25519.sign(payloadHash, seed);
 
-  const actualSignatureB64 = uint8ArrayToBase64(signedResult);
+  const actualSignatureB64 = base64.encode(signedResult);
 
   const publicKeyBytes = ed25519.getPublicKey(seed);
   const publicKeyString = ED25519_PREFIX + toBase58(publicKeyBytes);
@@ -66,8 +66,7 @@ async function _signWithKeyPair(
     public_key: publicKeyString,
     signature: actualSignatureB64,
     message: message,
-    // @ts-expect-error Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'
-    nonce: nonce,
+    nonce: Array.from(nonce), // Convert Uint8Array to number[] for zorsh
     recipient: recipient,
     callback_url: callbackUrl || null,
   };
@@ -101,15 +100,14 @@ async function _signWithWallet(
   const rawSignatureBytes = fromBase58(base58EncodedSignature);
 
   // Base64 encode the raw signature bytes
-  const actualSignatureB64 = uint8ArrayToBase64(rawSignatureBytes);
+  const actualSignatureB64 = base64.encode(rawSignatureBytes);
 
   const nearAuthDataObject: NearAuthData = {
     account_id: walletResult.accountId,
     public_key: walletResult.publicKey, // full "ed25519:<base58_pk>" string
     signature: actualSignatureB64, // Base64 of the *raw* 64-byte signature
     message: message, // JSON string from createMessage
-    // @ts-expect-error Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'
-    nonce: nonce, // actualNonceBytes (Uint8Array)
+    nonce: Array.from(nonce), // Convert Uint8Array to number[] for zorsh
     recipient: recipient,
     callback_url: callbackUrl || null,
   };
@@ -157,8 +155,8 @@ export async function sign(options: SignOptions): Promise<string> {
       throw new Error("accountId is required when using a KeyPair signer.");
     }
     return _signWithKeyPair(signer as string, accountId, internalParams);
-  } else {
-    // For wallet, accountId comes from the wallet's response, not from options.
-    return _signWithWallet(signer as WalletInterface, internalParams);
   }
+
+  // For wallet, accountId comes from the wallet's response, not from options.
+  return _signWithWallet(signer as WalletInterface, internalParams);
 }

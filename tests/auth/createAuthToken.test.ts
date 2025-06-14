@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createAuthToken } from "../../src/auth/createAuthToken.js";
 import { parseAuthToken } from "../../src/auth/parseAuthToken.js";
-import type { NearAuthData } from "../../src/types.js";
+import type { NearAuthData } from "../../src/schemas.js";
 
 describe("createAuthToken", () => {
   it("should create a properly formatted auth token that can be parsed back", () => {
@@ -10,8 +10,9 @@ describe("createAuthToken", () => {
       public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
       signature: "base64signature",
       message: "Hello, world!",
-      nonce: new Uint8Array(32).fill(0),
+      nonce: Array(32).fill(0),
       recipient: "recipient.near",
+      callback_url: null,
     };
 
     const token = createAuthToken(authData);
@@ -37,7 +38,7 @@ describe("createAuthToken", () => {
       public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
       signature: "base64signature",
       message: "Hello, world!",
-      nonce: new Uint8Array(32).fill(0),
+      nonce: Array(32).fill(0),
       recipient: "recipient.near",
       callback_url: "https://example.com/callback",
     };
