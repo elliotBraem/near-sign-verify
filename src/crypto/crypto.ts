@@ -1,37 +1,20 @@
+import { fromBase58 } from "@fastnear/utils";
 import { ed25519 } from "@noble/curves/ed25519";
 import { sha256 } from "@noble/hashes/sha2";
-import * as borsh from "borsh";
+import { NearAuthPayloadSchema } from "../schemas.js";
 import type { NearAuthPayload } from "../types.js";
-import { fromBase58 } from "@fastnear/utils";
 
 export const ED25519_PREFIX = "ed25519:";
 export const TAG = 2147484061;
 
+
 /**
- * Serialize a payload using Borsh
+ * Serialize a payload using Zorsh
  * @param payload Payload to serialize
  * @returns Serialized payload as Uint8Array
  */
 export function serializePayload(payload: NearAuthPayload): Uint8Array {
-  const borshPayload = {
-    tag: payload.tag,
-    message: payload.message,
-    nonce: Array.from(payload.nonce),
-    receiver: payload.receiver,
-    callback_url: payload.callback_url || null,
-  };
-
-  const schema = {
-    struct: {
-      tag: "u32",
-      message: "string",
-      nonce: { array: { type: "u8", len: 32 } },
-      receiver: "string",
-      callback_url: { option: "string" },
-    },
-  };
-
-  return borsh.serialize(schema, borshPayload);
+  return NearAuthPayloadSchema.serialize(payload);
 }
 
 /**
@@ -65,9 +48,9 @@ export async function verifySignature(
       throw new Error("Ed25519 signature verification failed.");
     }
     return true;
-  } else {
-    throw new Error(
-      `Unsupported public key type: "${publicKeyString}". Must start with "${ED25519_PREFIX}".`,
-    );
   }
+  
+  throw new Error(
+    `Unsupported public key type: "${publicKeyString}". Must start with "${ED25519_PREFIX}".`,
+  );
 }
