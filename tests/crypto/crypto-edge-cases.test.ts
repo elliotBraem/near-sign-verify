@@ -61,7 +61,9 @@ describe("Crypto Module - Edge Cases & Core Functionality", () => {
       const malformedKey = ED25519_PREFIX + "invalidKeyData"; // "l" is an invalid base58 char
       await expect(
         verifySignature(testPayloadHash, ed25519Signature, malformedKey),
-      ).rejects.toThrow(/Unknown letter: "l". Allowed: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz/);
+      ).rejects.toThrow(
+        /Unknown letter: "l". Allowed: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz/,
+      );
     });
 
     it("should throw for invalid Ed25519 signature", async () => {
