@@ -55,10 +55,10 @@ describe("parseAuthToken", () => {
 
     // Zorsh may successfully parse corrupted data but with garbled fields
     const parsed = parseAuthToken(corruptedToken);
-    
+
     // The account_id should be preserved (it comes early in the serialization)
     expect(parsed.account_id).toBe("test.near");
-    
+
     // But the recipient field (which comes later) should be corrupted
     expect(parsed.recipient).not.toBe("recipient.near");
   });

@@ -103,8 +103,6 @@ export interface WalletInterface {
   }>;
 }
 
-
-
 // Old ValidationResult type - replaced by VerificationResult or throwing errors.
 // export const ValidationResultSchema = z.object({
 //   valid: z.boolean(),

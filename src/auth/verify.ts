@@ -76,7 +76,7 @@ export async function verify(
 
   // Nonce validation - convert number[] back to Uint8Array for validation functions
   const nonceAsUint8Array = new Uint8Array(nonceFromAuthData);
-  
+
   if (options && "validateNonce" in options && options.validateNonce) {
     // Custom nonce validation
     if (!options.validateNonce(nonceAsUint8Array)) {

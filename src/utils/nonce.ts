@@ -1,4 +1,3 @@
-
 /**
  * Default max age for nonce validation (24 hours in milliseconds)
  */

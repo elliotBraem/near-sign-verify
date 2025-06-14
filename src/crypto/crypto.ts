@@ -7,7 +7,6 @@ import type { NearAuthPayload } from "../types.js";
 export const ED25519_PREFIX = "ed25519:";
 export const TAG = 2147484061;
 
-
 /**
  * Serialize a payload using Zorsh
  * @param payload Payload to serialize
@@ -49,7 +48,7 @@ export async function verifySignature(
     }
     return true;
   }
-  
+
   throw new Error(
     `Unsupported public key type: "${publicKeyString}". Must start with "${ED25519_PREFIX}".`,
   );

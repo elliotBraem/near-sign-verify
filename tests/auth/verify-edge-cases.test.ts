@@ -18,7 +18,8 @@ describe("verify - Edge Cases", () => {
   const baseAuthData: NearAuthData = {
     account_id: "testuser.testnet",
     public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
-    signature: "YN7xw5bhbD2VzrOlyyGwKKEaCBsuCVO9vu1AY1GkqQRRfOL2JNTjUUxJXp9KfC2nmA2xvytDdUzel0vmr/VDuA==",
+    signature:
+      "YN7xw5bhbD2VzrOlyyGwKKEaCBsuCVO9vu1AY1GkqQRRfOL2JNTjUUxJXp9KfC2nmA2xvytDdUzel0vmr/VDuA==",
     message: "test message",
     nonce: Array.from(testNonce),
     recipient: "recipient.near",
