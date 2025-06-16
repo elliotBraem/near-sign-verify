@@ -13,6 +13,7 @@ describe("parseAuthToken", () => {
       nonce: Array(32).fill(0),
       recipient: "recipient.near",
       callback_url: "https://example.com/callback",
+      state: null
     };
 
     const token = createAuthToken(authData);
@@ -46,12 +47,13 @@ describe("parseAuthToken", () => {
       nonce: Array(32).fill(0),
       recipient: "recipient.near",
       callback_url: null,
+      state: null
     };
 
     const token = createAuthToken(authData);
 
     // Corrupt the token by replacing some characters
-    const corruptedToken = token.substring(0, token.length - 5) + "XXXXX";
+    const corruptedToken = token.substring(0, token.length - 10) + "XXXXXXXXXX";
 
     // Zorsh may successfully parse corrupted data but with garbled fields
     const parsed = parseAuthToken(corruptedToken);

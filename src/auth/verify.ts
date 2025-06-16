@@ -69,23 +69,25 @@ export async function verify(
     public_key: publicKey,
     signature: signatureB64,
     message: messageString,
-    nonce: nonceFromAuthData, // nonce from the NearAuthPayload
+    nonce: nonceFromAuthData, // nonce from NearAuthPayload as number[]
     recipient: recipientFromAuthData,
     callback_url,
+    state, 
   } = authData;
 
-  // Nonce validation - convert number[] back to Uint8Array for validation functions
-  const nonceAsUint8Array = new Uint8Array(nonceFromAuthData);
+  // Convert number[] back to Uint8Array
+  const nonce = new Uint8Array(nonceFromAuthData);
 
-  if (options && "validateNonce" in options && options.validateNonce) {
+  // Validate nonce 
+  if (options?.validateNonce) {
     // Custom nonce validation
-    if (!options.validateNonce(nonceAsUint8Array)) {
+    if (!options.validateNonce(nonce)) {
       throw new Error("Custom nonce validation failed.");
     }
   } else {
     // Standard nonce validation using nonce from AuthData (which was part of the signed payload)
     try {
-      validateNonce(nonceAsUint8Array, options?.nonceMaxAge);
+      validateNonce(nonce, options?.nonceMaxAge);
     } catch (error) {
       throw new Error(
         `Nonce validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -101,6 +103,20 @@ export async function verify(
     throw new Error(
       `Recipient mismatch: expected '${options.expectedRecipient}', but recipient is '${recipientFromAuthData}'.`,
     );
+  }
+
+  // Validate expected state if provided
+  if (options?.expectedState) {
+    if (state !== options.expectedState) {
+      throw new Error(
+        `State mismatch: expected '${options.expectedState}', got '${state?.toString() || "undefined"}'.`,
+      );
+    }
+  } else if (options?.validateState) {
+    // Custom state validation
+    if (!options.validateState(state!)) {
+      throw new Error("Custom state validation failed.");
+    }
   }
 
   const requireFullAccessKey = options?.requireFullAccessKey ?? true;
@@ -145,5 +161,6 @@ export async function verify(
     message: messageString,
     publicKey: publicKey,
     callbackUrl: callback_url || undefined,
+    state: state || undefined
   };
 }

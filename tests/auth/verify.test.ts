@@ -24,6 +24,7 @@ describe("verify", () => {
     nonce: Array.from(testNonce),
     recipient: "recipient.near",
     callback_url: null,
+    state: "test-state-123",
   };
 
   let authTokenString: string;
@@ -269,6 +270,71 @@ describe("verify", () => {
       "Recipient mismatch: expected 'different-recipient.near'",
     );
 
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("should validate with matching expectedState", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ account_ids: [baseAuthData.account_id] }),
+    });
+    vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
+
+    const result = await verify(authTokenString, {
+      expectedState: "test-state-123",
+    });
+    expect(result.accountId).toBe(baseAuthData.account_id);
+    expect(result.state).toBe("test-state-123");
+  });
+
+  it("should reject with non-matching expectedState", async () => {
+    await expect(
+      verify(authTokenString, {
+        expectedState: "different-state",
+      }),
+    ).rejects.toThrow(
+      "State mismatch: expected 'different-state', got 'test-state-123'",
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+    it("should reject with non-matching expectedState when undefined", async () => {
+    const noState = JSON.parse(JSON.stringify(baseAuthData));
+    noState.state = null;
+    
+    await expect(
+      verify(createAuthToken(noState), {
+        expectedState: "different-state",
+      }),
+    ).rejects.toThrow(
+      "State mismatch: expected 'different-state', got 'undefined'",
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("should validate with custom validateState function returning true", async () => {
+    const customValidateState = vi.fn().mockReturnValue(true);
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ account_ids: [baseAuthData.account_id] }),
+    });
+    vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
+
+    const result = await verify(authTokenString, {
+      validateState: customValidateState,
+    });
+    expect(result.accountId).toBe(baseAuthData.account_id);
+    expect(customValidateState).toHaveBeenCalledWith("test-state-123");
+  });
+
+  it("should reject with custom validateState function returning false", async () => {
+    const customValidateState = vi.fn().mockReturnValue(false);
+    await expect(
+      verify(authTokenString, {
+        validateState: customValidateState,
+      }),
+    ).rejects.toThrow("Custom state validation failed");
+    expect(customValidateState).toHaveBeenCalledWith("test-state-123");
     expect(fetch).not.toHaveBeenCalled();
   });
 });

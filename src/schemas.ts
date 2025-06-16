@@ -23,6 +23,7 @@ export const NearAuthDataSchema = b.struct({
   nonce: b.array(b.u8(), 32),
   recipient: b.string(),
   callback_url: b.option(b.string()),
+  state: b.option(b.string()),
 });
 
 /**

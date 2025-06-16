@@ -1,5 +1,4 @@
 export { NearAuthPayload, NearAuthData } from "./schemas.js";
-
 /**
  * Options for the main `sign` function.
  */
@@ -35,8 +34,76 @@ export interface SignOptions {
    * If provided, this URL will receive a call after the signing process with the accountId, publicKey, signature, and state
    * <callbackUrl>#accountId=<accountId>&publicKey=<publicKey>&signature=<signature>&state=<state>.
    */
-  callbackUrl?: string | null;
+  callbackUrl?: string;
 }
+
+/**
+ * Options for validating the nonce in the `verify` function.
+ */
+type NonceValidationOptions =
+  | {
+    /**
+     * Maximum age of the nonce in milliseconds.
+     * If not provided, a default value (e.g., 24 hours) will be used.
+     * This option is mutually exclusive with `validateNonce`.
+     */
+    nonceMaxAge?: number;
+    validateNonce?: never; // Ensures validateNonce is not provided with nonceMaxAge
+  }
+  | {
+    /**
+     * A custom function to validate the nonce.
+     * Should return true if the nonce is valid, false otherwise.
+     * This option is mutually exclusive with `nonceMaxAge`.
+     */
+    validateNonce: (nonce: Uint8Array) => boolean;
+    nonceMaxAge?: never; // Ensures nonceMaxAge is not provided with validateNonce
+  };
+
+/**
+ * Options for validating the recipient in the `verify` function.
+ */
+type RecipientValidationOptions =
+  | {
+    /**
+     * The `recipient` field in the verified message must exactly match this string.
+     * If not provided, any recipient will be valid.
+     * This option is mutually exclusive with `validateRecipient`.
+     */
+    expectedRecipient?: string;
+    validateRecipient?: never; // Ensures validateRecipient is not provided with expectedRecipient
+  }
+  | {
+    /**
+     * A custom function to validate the recipient.
+     * Should return true if the recipient is valid, false otherwise.
+     * This option is mutually exclusive with `expectedRecipient`.
+     */
+    validateRecipient: (recipient: string) => boolean;
+    expectedRecipient?: never; // Ensures expectedRecipient is not provided with validateRecipient
+  };
+
+/**
+ * Options for validating the state in the `verify` function.
+ */
+type StateValidationOptions =
+  | {
+    /**
+     * The `state` field in the verified message must exactly match this string.
+     * This option is mutually exclusive with `validateState`.
+     */
+    expectedState?: string;
+    validateState?: never; // Ensures validateState is not provided with expectedState
+  }
+  | {
+    /**
+     * A custom function to validate the state.
+     * Should return true if the state is valid, false otherwise.
+     * This option is mutually exclusive with `expectedState`.
+     */
+    validateState: (state?: string) => boolean;
+    expectedState?: never; // Ensures expectedState is not provided with validateState
+  };
 
 /**
  * Options for the main `verify` function.
@@ -46,53 +113,13 @@ export type VerifyOptions = {
    * Whether the public key used for signing must be a Full Access Key.
    * Defaults to true. If false, Function Call Access Keys are permitted
    * provided they have permission for the `recipient`.
-   * 
+   *
    * Full access is highly recommended, otherwise ensure message, nonce, and state validation are enforced.
    */
   requireFullAccessKey?: boolean;
-} & (
-    | {
-      /**
-       * Maximum age of the nonce in milliseconds.
-       * If not provided, a default value (e.g., 24 hours) will be used.
-       * This option is mutually exclusive with `validateNonce`.
-       */
-      nonceMaxAge?: number;
-      validateNonce?: never; // Ensures validateNonce is not provided with nonceMaxAge
-    }
-    | {
-      /**
-       * A custom function to validate the nonce.
-       * Should return true if the nonce is valid, false otherwise.
-       * This option is mutually exclusive with `nonceMaxAge`.
-       */
-      validateNonce: (nonce: Uint8Array) => boolean;
-      nonceMaxAge?: never; // Ensures nonceMaxAge is not provided with validateNonce
-    }
-    & (
-      | {
-        /**
-         * The `recipient` field in the verified message must exactly match this string.
-         * If not provided, any recipient will be valid.
-         * This option is mutually exclusive with `validateRecipient`
-         */
-        expectedRecipient?: string;
-        validateRecipient?: never; // Ensures validateRecipient is not provided with expectedRecipient
-      }
-      | {
-        /**
-         * A custom function to validate the recipient.
-         * Should return false if the recipient is valid, false otherwise.
-         * This option is mutually exclusive with `expectedRecipient`;
-         */
-        validateRecipient?: (recipient: string) => boolean;
-        expectedRecipient?: never; // Ensures expectedRecipient is not provided with validateRecipient
-      }
-    )
-  );
-
-// expectedState?: string; // For simple state equality check.
-// validateState?: (state?: string) => boolean; // For custom state validation.
+} & NonceValidationOptions &
+  RecipientValidationOptions &
+  StateValidationOptions;
 
 /**
  * The result of a successful verification.
@@ -140,25 +167,4 @@ export interface SignedPayload {
   nonce: Uint8Array;
   recipient: string;
   callbackUrl?: string;
-}
-
-
-
-
-/** Data structure encoded within the library's authTokenString. */
-export interface NearAuthTokenPayload {
-  account_id: string;
-  public_key: string;
-  signature: string; // Base64 of raw signature
-
-  // Fields that were part of the signed SignedPayload
-  signed_message_content: string; // This is SignedPayload.message
-  signed_nonce: Uint8Array;       // This is SignedPayload.nonce
-  signed_recipient: string;     // This is SignedPayload.recipient
-  signed_callback_url?: string;  // This is SignedPayload.callbackUrl
-
-  // Additional metadata for the token (not part of the signature hash)
-  state?: string | null;
-  // To reconstruct the original TMessage if it was not a simple string.
-  original_message_representation?: string;
 }

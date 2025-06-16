@@ -24,6 +24,7 @@ describe("verify - Edge Cases", () => {
     nonce: Array.from(testNonce),
     recipient: "recipient.near",
     callback_url: null,
+    state: "edge-case-state",
   };
 
   beforeEach(() => {
@@ -157,5 +158,84 @@ describe("verify - Edge Cases", () => {
 
     const result = await verify(tokenString);
     expect(result.accountId).toBe(specialAccountId);
+  });
+
+  it("should handle custom state validation throwing an error", async () => {
+    const customValidateState = vi.fn().mockImplementation(() => {
+      throw new Error("Custom state validation error");
+    });
+    const tokenString = createAuthToken(baseAuthData);
+    await expect(
+      verify(tokenString, {
+        validateState: customValidateState,
+      }),
+    ).rejects.toThrow("Custom state validation error");
+    expect(customValidateState).toHaveBeenCalledWith("edge-case-state");
+  });
+
+  it("should handle null state in token when expectedState is provided", async () => {
+    const authDataWithNullState: NearAuthData = {
+      ...baseAuthData,
+      state: null,
+    };
+    const tokenString = createAuthToken(authDataWithNullState);
+    await expect(
+      verify(tokenString, {
+        expectedState: "some-state",
+      }),
+    ).rejects.toThrow("State mismatch: expected 'some-state', got 'undefined'");
+  });
+
+  it("should pass null state from token to custom validateState function", async () => {
+    const authDataWithNullState: NearAuthData = {
+      ...baseAuthData,
+      state: null,
+    };
+    const tokenString = createAuthToken(authDataWithNullState);
+    const customValidateState = vi.fn().mockReturnValue(false);
+
+    await expect(
+      verify(tokenString, {
+        validateState: customValidateState,
+      }),
+    ).rejects.toThrow("Custom state validation failed");
+    expect(customValidateState).toHaveBeenCalledWith(null);
+  });
+
+  it("should pass undefined state from token to custom validateState function", async () => {
+    const authDataWithoutStateProperty: NearAuthData = {
+      ...baseAuthData,
+      state: null,
+    };
+    const tokenString = createAuthToken(authDataWithoutStateProperty);
+    const customValidateState = vi.fn().mockReturnValue(true); // Mock to pass validation to check call
+
+    // Mock other checks to isolate state validation
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ account_ids: [authDataWithoutStateProperty.account_id] }),
+    });
+    vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
+
+    await verify(tokenString, {
+      validateState: customValidateState,
+    });
+    expect(customValidateState).toHaveBeenCalledWith(null);
+  });
+
+  it("should succeed if expectedState is undefined and token state is undefined", async () => {
+    const authDataUndefinedState: NearAuthData = {
+      ...baseAuthData,
+      state: null,
+    };
+    const tokenString = createAuthToken(authDataUndefinedState);
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ account_ids: [authDataUndefinedState.account_id] }),
+    });
+    vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
+    
+    const result = await verify(tokenString, { expectedState: undefined });
+    expect(result.state).toBeUndefined();
   });
 });

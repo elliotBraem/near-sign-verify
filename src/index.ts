@@ -4,7 +4,6 @@ export { verify } from "./auth/verify.js";
 
 // --- Helper Functions ---
 export { parseAuthToken } from "./auth/parseAuthToken.js";
-export { createAuthToken } from "./auth/createAuthToken.js";
 export { generateNonce, validateNonce } from "./utils/nonce.js";
 
 // --- Utility Exports ---
