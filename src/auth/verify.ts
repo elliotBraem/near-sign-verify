@@ -68,7 +68,7 @@ export async function verify(
     publicKey,
     signature: signatureB64,
     message: messageString,
-    nonce: nonceFromAuthData, // nonce from NearAuthPayload as number[]
+    nonce: nonceFromAuthData, // nonce from NearAuthData as number[]
     recipient: recipientFromAuthData,
     callbackUrl,
     state,
