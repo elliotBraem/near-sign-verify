@@ -9,9 +9,8 @@ describe("sign - Edge Cases", () => {
     const keyPair = near.KeyPair.fromRandom("ed25519");
 
     await expect(
-      sign({
+      sign("hello", {
         signer: keyPair.toString(),
-        message: "hello",
         recipient: "recipient.near",
       }),
     ).rejects.toThrow("accountId is required when using a KeyPair signer");
@@ -20,14 +19,13 @@ describe("sign - Edge Cases", () => {
   it("should throw error for invalid signer type", async () => {
     const invalidSigner = {
       // Missing both KeyPair methods and WalletInterface methods
-      someOtherMethod: () => {},
+      someOtherMethod: () => { },
     } as any;
 
     await expect(
-      sign({
+      sign("hello", {
         signer: invalidSigner,
         accountId: "test.near",
-        message: "hello",
         recipient: "recipient.near",
       }),
     ).rejects.toThrow(
@@ -37,14 +35,13 @@ describe("sign - Edge Cases", () => {
 
   it("should throw error for object with only partial KeyPair interface", async () => {
     const partialKeyPair = {
-      sign: () => {}, // Has sign but missing getPublicKey
+      sign: () => { }, // Has sign but missing getPublicKey
     } as any;
 
     await expect(
-      sign({
+      sign("hello", {
         signer: partialKeyPair,
         accountId: "test.near",
-        message: "hello",
         recipient: "recipient.near",
       }),
     ).rejects.toThrow(
@@ -54,14 +51,13 @@ describe("sign - Edge Cases", () => {
 
   it("should throw error for object with only partial WalletInterface", async () => {
     const partialWallet = {
-      someMethod: () => {}, // Missing signMessage
+      someMethod: () => { }, // Missing signMessage
     } as any;
 
     await expect(
-      sign({
+      sign("hello", {
         signer: partialWallet,
         accountId: "test.near",
-        message: "hello",
         recipient: "recipient.near",
       }),
     ).rejects.toThrow(
@@ -77,10 +73,9 @@ describe("sign - Edge Cases", () => {
     };
 
     await expect(
-      sign({
+      sign("hello", {
         signer: mockWallet,
         recipient: "recipient.near",
-        message: "hello",
       }),
     ).rejects.toThrow("Wallet signing failed");
   });
@@ -89,10 +84,9 @@ describe("sign - Edge Cases", () => {
     const malformedKeyPairString =
       "ed25519:ThisIsNotValidBase58AndWillCauseAnErrorDuringDecoding!!!";
     await expect(
-      sign({
+      sign("hello", {
         signer: malformedKeyPairString,
         accountId: "test.near",
-        message: "hello",
         recipient: "recipient.near",
       }),
     ).rejects.toThrow(
@@ -111,9 +105,8 @@ describe("sign - Edge Cases", () => {
       }),
     };
 
-    const result = await sign({
+    const result = await sign("hello", {
       signer: mockWallet,
-      message: "hello",
       recipient: "recipient.near",
     });
 

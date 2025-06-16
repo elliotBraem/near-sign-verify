@@ -17,11 +17,10 @@ import { KeyPair } from '@near-js/crypto';
 
 const keyPair = KeyPair.fromRandom('ed25519'); // for example
 
-const authToken = await sign({
+const authToken = await sign("login attempt", {
   signer: keyPair.toString(),
   accountId: "you.near", // PubKey owner (you can pretend)
-  recipient: "your-service.near",
-  message: "login attempt"
+  recipient: "your-service.near"
 });
 
 // --- Send request with the token ---
@@ -59,10 +58,9 @@ Uses [fastintear](https://github.com/elliotBraem/fastintear), an expirmental for
 import * as near from "fastintear";
 import { sign, verify } from 'near-sign-verify';
 
-const authToken = await sign({
+const authToken = await sign("login attempt", { // whatever message, can be validated on backend
   signer: near, // has a signMessage function
   recipient: 'app.near',
-  message: "login attempt" // whatever message, can be validated on backend
 });
 
 // --- Send request with the token ---
@@ -99,11 +97,10 @@ You can override the default nonce generation and validation (timestamp based, m
 ```typescript
 import { sign, verify } from "near-sign-verify";
 
-const authToken = await sign({
+const authToken = await sign("do something", { // whatever message, can be validated on backend
   signer: wallet,
   recipient: "your-service.near",
-  nonce: 1, // your nonce override
-  message: "do something" // whatever message, can be validated on backend
+  nonce: 1 // your nonce override
 })
 
 try {

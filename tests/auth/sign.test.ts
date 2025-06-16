@@ -46,12 +46,11 @@ describe("Sign Function", () => {
       signer: FCAK_KEY_PAIR.toString(),
       accountId: ACCOUNT_ID,
       recipient,
-      message: JSON.stringify(appData),
       callbackUrl,
       nonce: specificNonce,
     };
 
-    const authTokenString: string = await sign(signOptions);
+    const authTokenString: string = await sign(JSON.stringify(appData), signOptions);
     expect(authTokenString).toBeDefined();
     expect(typeof authTokenString).toBe("string");
 
@@ -88,11 +87,10 @@ describe("Sign Function", () => {
       signer: FCAK_KEY_PAIR.toString(),
       accountId: ACCOUNT_ID,
       recipient,
-      message: "Another test message",
       // No nonce provided
     };
 
-    const authTokenString: string = await sign(signOptions);
+    const authTokenString: string = await sign("Another test message", signOptions);
     expect(authTokenString).toBeDefined();
 
     const verificationResult: VerificationResult = await verify(

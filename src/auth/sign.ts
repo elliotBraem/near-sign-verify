@@ -132,16 +132,17 @@ function detectSignerType(
  * Signs a message using either a KeyPair or a wallet, creating a structured
  * message and producing a NEAR authentication token.
  *
+ * @param message The message to sign, can be application specific data.
  * @param options The signing options.
  * @returns A promise that resolves to the final AuthToken string.
  */
-export async function sign(options: SignOptions): Promise<string> {
-  const { signer, accountId, recipient, message, callbackUrl, nonce } = options;
+export async function sign(message: string, options: SignOptions): Promise<string> {
+  const { signer, accountId, recipient, callbackUrl, nonce } = options;
 
   const currentNonce = nonce || generateNonce();
 
   const internalParams: InternalSignParameters = {
-    message,
+    message: message,
     recipient: recipient,
     nonce: currentNonce,
     callbackUrl: callbackUrl,
