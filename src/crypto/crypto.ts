@@ -1,19 +1,37 @@
 import { ed25519 } from "@noble/curves/ed25519";
 import { sha256 } from "@noble/hashes/sha2";
-import { NearAuthPayloadSchema } from "../schemas.js";
-import type { NearAuthPayload } from "../types.js";
 import { base58 } from "@scure/base";
+import { b } from "@zorsh/zorsh";
+import { SignedPayloadSchema } from "../schemas.js";
+import type { SignedPayload } from "../types.js";
 
 export const ED25519_PREFIX = "ed25519:";
 export const TAG = 2147484061;
 
 /**
- * Serialize a payload using Zorsh
+ * Create a NEP-413 payload to be hashed
+ * (Serialize the TAG and the payload separately, then concatenate)
  * @param payload Payload to serialize
- * @returns Serialized payload as Uint8Array
+ * @returns Concatenated, serialized payloads as Uint8Array
  */
-export function serializePayload(payload: NearAuthPayload): Uint8Array {
-  return NearAuthPayloadSchema.serialize(payload);
+export function createNEP413Payload(payload: SignedPayload): Uint8Array {
+  const serializedTag = b.u32().serialize(TAG);
+
+  const serializablePayload = {
+    // Convert nonce from Uint8Array to number[] for zorsh
+    ...payload,
+    nonce: Array.from(payload.nonce),
+    callbackUrl: payload.callbackUrl || null,
+  };
+  const serializedPayload = SignedPayloadSchema.serialize(serializablePayload);
+
+  const dataToHash = new Uint8Array(
+    serializedTag.length + serializedPayload.length,
+  );
+  dataToHash.set(serializedTag, 0);
+  dataToHash.set(serializedPayload, serializedTag.length);
+
+  return dataToHash;
 }
 
 /**

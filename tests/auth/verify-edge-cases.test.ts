@@ -16,14 +16,14 @@ describe("verify - Edge Cases", () => {
   const testNonce = new Uint8Array(32);
 
   const baseAuthData: NearAuthData = {
-    account_id: "testuser.testnet",
-    public_key: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
+    accountId: "testuser.testnet",
+    publicKey: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
     signature:
       "YN7xw5bhbD2VzrOlyyGwKKEaCBsuCVO9vu1AY1GkqQRRfOL2JNTjUUxJXp9KfC2nmA2xvytDdUzel0vmr/VDuA==",
     message: "test message",
     nonce: Array.from(testNonce),
     recipient: "recipient.near",
-    callback_url: null,
+    callbackUrl: null,
     state: "edge-case-state",
   };
 
@@ -46,7 +46,7 @@ describe("verify - Edge Cases", () => {
   it("should handle FastNEAR API returning unexpected response format", async () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ unexpected: "format" }), // Missing account_ids array
+      json: async () => ({ unexpected: "format" }), // Missing accountIds array
     });
 
     const tokenString = createAuthToken(baseAuthData);
@@ -97,7 +97,7 @@ describe("verify - Edge Cases", () => {
 
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ account_ids: [baseAuthData.account_id] }),
+      json: async () => ({ account_ids: [baseAuthData.accountId] }),
     });
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
 
@@ -133,7 +133,7 @@ describe("verify - Edge Cases", () => {
 
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ account_ids: [baseAuthData.account_id] }),
+      json: async () => ({ account_ids: [baseAuthData.accountId] }),
     });
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
 
@@ -145,7 +145,7 @@ describe("verify - Edge Cases", () => {
     const specialAccountId = "test-user_123.testnet";
     const specialAuthData: NearAuthData = {
       ...baseAuthData,
-      account_id: specialAccountId,
+      accountId: specialAccountId,
     };
 
     const tokenString = createAuthToken(specialAuthData);
@@ -214,7 +214,7 @@ describe("verify - Edge Cases", () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        account_ids: [authDataWithoutStateProperty.account_id],
+        account_ids: [authDataWithoutStateProperty.accountId],
       }),
     });
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
@@ -233,7 +233,7 @@ describe("verify - Edge Cases", () => {
     const tokenString = createAuthToken(authDataUndefinedState);
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ account_ids: [authDataUndefinedState.account_id] }),
+      json: async () => ({ account_ids: [authDataUndefinedState.accountId] }),
     });
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
 
@@ -262,7 +262,7 @@ describe("verify - Edge Cases", () => {
     const tokenString = createAuthToken(authDataEmptyMessage);
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ account_ids: [authDataEmptyMessage.account_id] }),
+      json: async () => ({ account_ids: [authDataEmptyMessage.accountId] }),
     });
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
 
@@ -288,7 +288,7 @@ describe("verify - Edge Cases", () => {
     const customValidateMessage = vi.fn().mockReturnValue(true);
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ account_ids: [authDataEmptyMessage.account_id] }),
+      json: async () => ({ account_ids: [authDataEmptyMessage.accountId] }),
     });
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
 

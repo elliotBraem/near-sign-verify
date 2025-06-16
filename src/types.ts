@@ -1,4 +1,4 @@
-export { NearAuthPayload, NearAuthData } from "./schemas.js";
+export { NearAuthData, SignedPayload } from "./schemas.js";
 /**
  * Options for the main `sign` function.
  */
@@ -181,12 +181,4 @@ export interface SignedMessage {
 export interface WalletInterface {
   /** Must conform to NEP-413 signMessage specification. */
   signMessage: (params: SignMessageParams) => Promise<SignedMessage>;
-}
-
-/** NEP-413: The structure whose Borsh representation (prepended with TAG) is hashed and signed. */
-export interface SignedPayload {
-  message: string; // Serialized version of the user's original message.
-  nonce: Uint8Array;
-  recipient: string;
-  callbackUrl?: string;
 }

@@ -1,13 +1,12 @@
 import { base64 } from "@scure/base";
 import {
-  TAG,
+  createNEP413Payload,
   hashPayload,
-  serializePayload,
   verifySignature,
 } from "../crypto/crypto.js";
 import type {
   NearAuthData,
-  NearAuthPayload,
+  SignedPayload,
   VerificationResult,
   VerifyOptions,
 } from "../types.js";
@@ -65,13 +64,13 @@ export async function verify(
   }
 
   const {
-    account_id: accountId,
-    public_key: publicKey,
+    accountId,
+    publicKey,
     signature: signatureB64,
     message: messageString,
     nonce: nonceFromAuthData, // nonce from NearAuthPayload as number[]
     recipient: recipientFromAuthData,
-    callback_url,
+    callbackUrl,
     state,
   } = authData;
 
@@ -149,16 +148,16 @@ export async function verify(
   }
 
   // Reconstruct the payload that was originally signed
-  const payloadToVerify: NearAuthPayload = {
-    tag: TAG,
+  const nep413PayloadToVerify: SignedPayload = {
     message: messageString,
-    nonce: nonceFromAuthData, // The nonce that was part of the signed payload
-    receiver: recipientFromAuthData, // The recipient that was part of the signed payload
-    callback_url: callback_url || null,
+    nonce: Array.from(nonce),
+    recipient: recipientFromAuthData,
+    callbackUrl,
   };
 
-  const serializedPayloadToVerify = serializePayload(payloadToVerify);
-  const payloadHash = hashPayload(serializedPayloadToVerify);
+  const dataThatWasHashed = createNEP413Payload(nep413PayloadToVerify);
+
+  const payloadHash = hashPayload(dataThatWasHashed);
   const signatureBytes = base64.decode(signatureB64);
 
   try {
@@ -175,7 +174,7 @@ export async function verify(
     accountId: accountId,
     message: messageString,
     publicKey: publicKey,
-    callbackUrl: callback_url || undefined,
+    callbackUrl: callbackUrl || undefined,
     state: state || undefined,
   };
 }

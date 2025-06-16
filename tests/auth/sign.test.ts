@@ -13,8 +13,8 @@ import {
 
 dotenv.config();
 
-const ACCOUNT_ID = "signverifytests.testnet";
-const FCAK_PUBLIC_KEY_STR =
+const accountId = "signverifytests.testnet";
+const FCAK_publicKey_STR =
   "ed25519:DKFEx1W5rxMNVAnqJ25Cq47Xvys4zZsrJg8bzgT971vt";
 let FCAK_KEY_PAIR: near.KeyPair;
 
@@ -29,9 +29,9 @@ describe("Sign Function", () => {
     FCAK_KEY_PAIR = near.KeyPair.fromString(
       fcakSecretKey as near.utils.KeyPairString,
     );
-    if (FCAK_KEY_PAIR.getPublicKey().toString() !== FCAK_PUBLIC_KEY_STR) {
+    if (FCAK_KEY_PAIR.getPublicKey().toString() !== FCAK_publicKey_STR) {
       throw new Error(
-        "Provided FCAK_SECRET_KEY does not match FCAK_PUBLIC_KEY_STR.",
+        "Provided FCAK_SECRET_KEY does not match FCAK_publicKey_STR.",
       );
     }
   });
@@ -44,7 +44,7 @@ describe("Sign Function", () => {
 
     const signOptions: SignOptions = {
       signer: FCAK_KEY_PAIR.toString(),
-      accountId: ACCOUNT_ID,
+      accountId: accountId,
       recipient,
       callbackUrl,
       nonce: specificNonce,
@@ -67,17 +67,17 @@ describe("Sign Function", () => {
     );
 
     expect(verificationResult).toBeDefined();
-    expect(verificationResult.accountId).toBe(ACCOUNT_ID);
-    expect(verificationResult.publicKey).toBe(FCAK_PUBLIC_KEY_STR);
+    expect(verificationResult.accountId).toBe(accountId);
+    expect(verificationResult.publicKey).toBe(FCAK_publicKey_STR);
     expect(verificationResult.callbackUrl).toBe(callbackUrl);
     expect(verificationResult.message).toEqual(JSON.stringify(appData));
 
     // Optionally, parse the token directly to check raw NearAuthData
     const parsedNearAuthData: NearAuthData = parseAuthToken(authTokenString);
-    expect(parsedNearAuthData.account_id).toBe(ACCOUNT_ID);
-    expect(parsedNearAuthData.public_key).toBe(FCAK_PUBLIC_KEY_STR);
+    expect(parsedNearAuthData.accountId).toBe(accountId);
+    expect(parsedNearAuthData.publicKey).toBe(FCAK_publicKey_STR);
     expect(parsedNearAuthData.recipient).toBe(recipient);
-    expect(parsedNearAuthData.callback_url).toBe(callbackUrl);
+    expect(parsedNearAuthData.callbackUrl).toBe(callbackUrl);
     expect(new Uint8Array(parsedNearAuthData.nonce)).toStrictEqual(
       specificNonce,
     );
@@ -88,7 +88,7 @@ describe("Sign Function", () => {
 
     const signOptions: SignOptions = {
       signer: FCAK_KEY_PAIR.toString(),
-      accountId: ACCOUNT_ID,
+      accountId: accountId,
       recipient,
       // No nonce provided
     };
@@ -108,7 +108,7 @@ describe("Sign Function", () => {
     );
 
     expect(verificationResult).toBeDefined();
-    expect(verificationResult.accountId).toBe(ACCOUNT_ID);
+    expect(verificationResult.accountId).toBe(accountId);
 
     // Check raw parsed data
     const parsedNearAuthData: NearAuthData = parseAuthToken(authTokenString);
