@@ -26,7 +26,7 @@ npm install near-sign-verify
 
 ### 1. Simple Client-Side Signing with a Wallet
 
-This example shows how to use `fastintear` (or any wallet object that implements `signMessage` as per NEP-413) to sign a message client-side, attach the token to an Authorization header, and verify it with default settings.
+This example shows how to use `fastintear` (or any wallet object that implements `signMessage` as per [NEP-413](https://github.com/near/NEPs/blob/master/neps/nep-0413.md)) to sign a message client-side, attach the token to an Authorization header, and verify it with default settings.
 
 This simple strategy is fine for a non-production application and provides a basic timestamp-based nonce validation.
 
@@ -70,9 +70,9 @@ try {
 
 ### 2. Signing with a KeyPair
 
-This flow demonstrates signing a message using a `KeyPair` directly. This is useful for testing, backend-initiated signing (if you manage keys securely), or simulated environments.
+This flow demonstrates signing a message using a `KeyPair` directly. This is useful for testing, backend-initiated signing (if you manage keys securely, such as when building a wallet), or simulated environments.
 
-**Important:** The NEP-413 standard explicitly states that messages **MUST be signed using a Full Access Key** for security. While `near-sign-verify` can verify signatures from Function Call Access Keys by setting `requireFullAccessKey: false`, this deviates from the NEP's core security premise and is **NOT recommended for production authentication flows** without significant additional validation on your end.
+**Important:** [NEP-413](https://github.com/near/NEPs/blob/master/neps/nep-0413.md#why-using-a-fullaccess-key-why-not-simply-creating-an-functioncall-key-for-signing) standard explicitly states that messages **MUST be signed using a Full Access Key** for security. While `near-sign-verify` can verify signatures from Function Call Access Keys by setting `requireFullAccessKey: false`, this is **NOT recommended for production authentication flows** without significant additional validation on your end.
 
 ```typescript
 // --- Create signed token from KeyPair ---
