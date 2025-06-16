@@ -252,6 +252,7 @@ POST("https://your-service.com/api/auth/verify-request", async (req, res) => {
     }
     res.status(400).json({ success: false, error: e.message });
   }
+});
 ```
 
 ## Debugging
