@@ -110,7 +110,10 @@ describe("NEAR Signature Flow Integration Test", () => {
       recipient,
       nonce: specificNonce,
     };
-    const authTokenString = await sign("Test with FCAK, requireFullAccessKey=true", signOptions);
+    const authTokenString = await sign(
+      "Test with FCAK, requireFullAccessKey=true",
+      signOptions,
+    );
 
     const verifyOpts: VerifyOptions = {
       requireFullAccessKey: true,
@@ -131,7 +134,10 @@ describe("NEAR Signature Flow Integration Test", () => {
       recipient,
       nonce: specificNonce,
     };
-    const authTokenString = await sign("Test with FCAK, requireFullAccessKey=false", signOptions);
+    const authTokenString = await sign(
+      "Test with FCAK, requireFullAccessKey=false",
+      signOptions,
+    );
 
     const verifyOpts: VerifyOptions = {
       requireFullAccessKey: false,
@@ -157,7 +163,10 @@ describe("NEAR Signature Flow Integration Test", () => {
       recipient,
       nonce: specificNonce,
     };
-    const authTokenString = await sign("Test with random unassociated PK", signOptions);
+    const authTokenString = await sign(
+      "Test with random unassociated PK",
+      signOptions,
+    );
 
     await expect(
       verify(authTokenString, { expectedRecipient: recipient }),

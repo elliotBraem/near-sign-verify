@@ -72,15 +72,14 @@ export async function verify(
     nonce: nonceFromAuthData, // nonce from NearAuthPayload as number[]
     recipient: recipientFromAuthData,
     callback_url,
-    state, 
+    state,
   } = authData;
 
   // Convert number[] back to Uint8Array
   const nonce = new Uint8Array(nonceFromAuthData);
 
-  // Validate nonce 
+  // Validate nonce
   if (options?.validateNonce) {
-    // Custom nonce validation
     if (!options.validateNonce(nonce)) {
       throw new Error("Custom nonce validation failed.");
     }
@@ -95,30 +94,46 @@ export async function verify(
     }
   }
 
-  // Validate expected recipient if provided
-  if (
-    options?.expectedRecipient &&
-    recipientFromAuthData !== options.expectedRecipient
-  ) {
-    throw new Error(
-      `Recipient mismatch: expected '${options.expectedRecipient}', but recipient is '${recipientFromAuthData}'.`,
-    );
+  // Validate recipient
+  if (options?.validateRecipient) {
+    if (!options.validateRecipient(recipientFromAuthData)) {
+      throw new Error("Custom recipient validation failed.");
+    }
+  } else if (options && typeof options.expectedRecipient === "string") {
+    if (recipientFromAuthData !== options.expectedRecipient) {
+      throw new Error(
+        `Recipient mismatch: expected '${options.expectedRecipient}', but recipient is '${recipientFromAuthData}'.`,
+      );
+    }
   }
 
-  // Validate expected state if provided
-  if (options?.expectedState) {
+  // Validate state
+  if (options?.validateState) {
+    if (!options.validateState(state!)) {
+      throw new Error("Custom state validation failed.");
+    }
+  } else if (options && typeof options.expectedState === "string") {
     if (state !== options.expectedState) {
       throw new Error(
         `State mismatch: expected '${options.expectedState}', got '${state?.toString() || "undefined"}'.`,
       );
     }
-  } else if (options?.validateState) {
-    // Custom state validation
-    if (!options.validateState(state!)) {
-      throw new Error("Custom state validation failed.");
+  }
+
+  // Validate message
+  if (options?.validateMessage) {
+    if (!options.validateMessage(messageString)) {
+      throw new Error("Custom message validation failed.");
+    }
+  } else if (options && typeof options.expectedMessage === "string") {
+    if (messageString !== options.expectedMessage) {
+      throw new Error(
+        `Message mismatch: expected '${options.expectedMessage}', got '${messageString}'.`,
+      );
     }
   }
 
+  // Validate publicKey
   const requireFullAccessKey = options?.requireFullAccessKey ?? true;
   const ownerCheckResult = await verifyPublicKeyOwner(
     accountId,
@@ -161,6 +176,6 @@ export async function verify(
     message: messageString,
     publicKey: publicKey,
     callbackUrl: callback_url || undefined,
-    state: state || undefined
+    state: state || undefined,
   };
 }

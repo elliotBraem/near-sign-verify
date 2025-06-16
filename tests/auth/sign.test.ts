@@ -50,7 +50,10 @@ describe("Sign Function", () => {
       nonce: specificNonce,
     };
 
-    const authTokenString: string = await sign(JSON.stringify(appData), signOptions);
+    const authTokenString: string = await sign(
+      JSON.stringify(appData),
+      signOptions,
+    );
     expect(authTokenString).toBeDefined();
     expect(typeof authTokenString).toBe("string");
 
@@ -90,7 +93,10 @@ describe("Sign Function", () => {
       // No nonce provided
     };
 
-    const authTokenString: string = await sign("Another test message", signOptions);
+    const authTokenString: string = await sign(
+      "Another test message",
+      signOptions,
+    );
     expect(authTokenString).toBeDefined();
 
     const verificationResult: VerificationResult = await verify(

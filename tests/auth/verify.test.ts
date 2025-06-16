@@ -298,10 +298,10 @@ describe("verify", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-    it("should reject with non-matching expectedState when undefined", async () => {
+  it("should reject with non-matching expectedState when undefined", async () => {
     const noState = JSON.parse(JSON.stringify(baseAuthData));
     noState.state = null;
-    
+
     await expect(
       verify(createAuthToken(noState), {
         expectedState: "different-state",
@@ -335,6 +335,57 @@ describe("verify", () => {
       }),
     ).rejects.toThrow("Custom state validation failed");
     expect(customValidateState).toHaveBeenCalledWith("test-state-123");
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("should validate with matching expectedMessage", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ account_ids: [baseAuthData.account_id] }),
+    });
+    vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
+
+    const result = await verify(authTokenString, {
+      expectedMessage: "test message",
+    });
+    expect(result.accountId).toBe(baseAuthData.account_id);
+    expect(result.message).toBe("test message");
+  });
+
+  it("should reject with non-matching expectedMessage", async () => {
+    await expect(
+      verify(authTokenString, {
+        expectedMessage: "different-message",
+      }),
+    ).rejects.toThrow(
+      "Message mismatch: expected 'different-message', got 'test message'",
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("should validate with custom validateMessage function returning true", async () => {
+    const customValidateMessage = vi.fn().mockReturnValue(true);
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ account_ids: [baseAuthData.account_id] }),
+    });
+    vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
+
+    const result = await verify(authTokenString, {
+      validateMessage: customValidateMessage,
+    });
+    expect(result.accountId).toBe(baseAuthData.account_id);
+    expect(customValidateMessage).toHaveBeenCalledWith("test message");
+  });
+
+  it("should reject with custom validateMessage function returning false", async () => {
+    const customValidateMessage = vi.fn().mockReturnValue(false);
+    await expect(
+      verify(authTokenString, {
+        validateMessage: customValidateMessage,
+      }),
+    ).rejects.toThrow("Custom message validation failed");
+    expect(customValidateMessage).toHaveBeenCalledWith("test message");
     expect(fetch).not.toHaveBeenCalled();
   });
 });

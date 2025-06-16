@@ -19,7 +19,7 @@ describe("sign - Edge Cases", () => {
   it("should throw error for invalid signer type", async () => {
     const invalidSigner = {
       // Missing both KeyPair methods and WalletInterface methods
-      someOtherMethod: () => { },
+      someOtherMethod: () => {},
     } as any;
 
     await expect(
@@ -35,7 +35,7 @@ describe("sign - Edge Cases", () => {
 
   it("should throw error for object with only partial KeyPair interface", async () => {
     const partialKeyPair = {
-      sign: () => { }, // Has sign but missing getPublicKey
+      sign: () => {}, // Has sign but missing getPublicKey
     } as any;
 
     await expect(
@@ -51,7 +51,7 @@ describe("sign - Edge Cases", () => {
 
   it("should throw error for object with only partial WalletInterface", async () => {
     const partialWallet = {
-      someMethod: () => { }, // Missing signMessage
+      someMethod: () => {}, // Missing signMessage
     } as any;
 
     await expect(

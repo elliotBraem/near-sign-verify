@@ -42,68 +42,90 @@ export interface SignOptions {
  */
 type NonceValidationOptions =
   | {
-    /**
-     * Maximum age of the nonce in milliseconds.
-     * If not provided, a default value (e.g., 24 hours) will be used.
-     * This option is mutually exclusive with `validateNonce`.
-     */
-    nonceMaxAge?: number;
-    validateNonce?: never; // Ensures validateNonce is not provided with nonceMaxAge
-  }
+      /**
+       * Maximum age of the nonce in milliseconds.
+       * If not provided, a default value (e.g., 24 hours) will be used.
+       * This option is mutually exclusive with `validateNonce`.
+       */
+      nonceMaxAge?: number;
+      validateNonce?: never; // Ensures validateNonce is not provided with nonceMaxAge
+    }
   | {
-    /**
-     * A custom function to validate the nonce.
-     * Should return true if the nonce is valid, false otherwise.
-     * This option is mutually exclusive with `nonceMaxAge`.
-     */
-    validateNonce: (nonce: Uint8Array) => boolean;
-    nonceMaxAge?: never; // Ensures nonceMaxAge is not provided with validateNonce
-  };
+      /**
+       * A custom function to validate the nonce.
+       * Should return true if the nonce is valid, false otherwise.
+       * This option is mutually exclusive with `nonceMaxAge`.
+       */
+      validateNonce: (nonce: Uint8Array) => boolean;
+      nonceMaxAge?: never; // Ensures nonceMaxAge is not provided with validateNonce
+    };
 
 /**
  * Options for validating the recipient in the `verify` function.
  */
 type RecipientValidationOptions =
   | {
-    /**
-     * The `recipient` field in the verified message must exactly match this string.
-     * If not provided, any recipient will be valid.
-     * This option is mutually exclusive with `validateRecipient`.
-     */
-    expectedRecipient?: string;
-    validateRecipient?: never; // Ensures validateRecipient is not provided with expectedRecipient
-  }
+      /**
+       * The `recipient` field in the verified message must exactly match this string.
+       * If not provided, any recipient will be valid.
+       * This option is mutually exclusive with `validateRecipient`.
+       */
+      expectedRecipient?: string;
+      validateRecipient?: never; // Ensures validateRecipient is not provided with expectedRecipient
+    }
   | {
-    /**
-     * A custom function to validate the recipient.
-     * Should return true if the recipient is valid, false otherwise.
-     * This option is mutually exclusive with `expectedRecipient`.
-     */
-    validateRecipient: (recipient: string) => boolean;
-    expectedRecipient?: never; // Ensures expectedRecipient is not provided with validateRecipient
-  };
+      /**
+       * A custom function to validate the recipient.
+       * Should return true if the recipient is valid, false otherwise.
+       * This option is mutually exclusive with `expectedRecipient`.
+       */
+      validateRecipient: (recipient: string) => boolean;
+      expectedRecipient?: never; // Ensures expectedRecipient is not provided with validateRecipient
+    };
 
 /**
  * Options for validating the state in the `verify` function.
  */
 type StateValidationOptions =
   | {
-    /**
-     * The `state` field in the verified message must exactly match this string.
-     * This option is mutually exclusive with `validateState`.
-     */
-    expectedState?: string;
-    validateState?: never; // Ensures validateState is not provided with expectedState
-  }
+      /**
+       * The `state` field in the verified message must exactly match this string.
+       * This option is mutually exclusive with `validateState`.
+       */
+      expectedState?: string;
+      validateState?: never; // Ensures validateState is not provided with expectedState
+    }
   | {
-    /**
-     * A custom function to validate the state.
-     * Should return true if the state is valid, false otherwise.
-     * This option is mutually exclusive with `expectedState`.
-     */
-    validateState: (state?: string) => boolean;
-    expectedState?: never; // Ensures expectedState is not provided with validateState
-  };
+      /**
+       * A custom function to validate the state.
+       * Should return true if the state is valid, false otherwise.
+       * This option is mutually exclusive with `expectedState`.
+       */
+      validateState: (state?: string) => boolean;
+      expectedState?: never; // Ensures expectedState is not provided with validateState
+    };
+
+/**
+ * Options for validating the message in the `verify` function.
+ */
+type MessageValidationOptions =
+  | {
+      /**
+       * The `message` field in the verified token must exactly match this string.
+       * This option is mutually exclusive with `validateMessage`.
+       */
+      expectedMessage?: string;
+      validateMessage?: never; // Ensures validateMessage is not provided with expectedMessage
+    }
+  | {
+      /**
+       * A custom function to validate the message.
+       * Should return true if the message is valid, false otherwise.
+       * This option is mutually exclusive with `expectedMessage`.
+       */
+      validateMessage: (message: string) => boolean;
+      expectedMessage?: never; // Ensures expectedMessage is not provided with validateMessage
+    };
 
 /**
  * Options for the main `verify` function.
@@ -119,7 +141,8 @@ export type VerifyOptions = {
   requireFullAccessKey?: boolean;
 } & NonceValidationOptions &
   RecipientValidationOptions &
-  StateValidationOptions;
+  StateValidationOptions &
+  MessageValidationOptions;
 
 /**
  * The result of a successful verification.
@@ -159,7 +182,6 @@ export interface WalletInterface {
   /** Must conform to NEP-413 signMessage specification. */
   signMessage: (params: SignMessageParams) => Promise<SignedMessage>;
 }
-
 
 /** NEP-413: The structure whose Borsh representation (prepended with TAG) is hashed and signed. */
 export interface SignedPayload {

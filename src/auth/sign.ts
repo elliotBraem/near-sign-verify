@@ -136,7 +136,10 @@ function detectSignerType(
  * @param options The signing options.
  * @returns A promise that resolves to the final AuthToken string.
  */
-export async function sign(message: string, options: SignOptions): Promise<string> {
+export async function sign(
+  message: string,
+  options: SignOptions,
+): Promise<string> {
   const { signer, accountId, recipient, callbackUrl, nonce } = options;
 
   const currentNonce = nonce || generateNonce();

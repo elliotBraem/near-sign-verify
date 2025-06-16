@@ -213,7 +213,9 @@ describe("verify - Edge Cases", () => {
     // Mock other checks to isolate state validation
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ account_ids: [authDataWithoutStateProperty.account_id] }),
+      json: async () => ({
+        account_ids: [authDataWithoutStateProperty.account_id],
+      }),
     });
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
 
@@ -234,8 +236,65 @@ describe("verify - Edge Cases", () => {
       json: async () => ({ account_ids: [authDataUndefinedState.account_id] }),
     });
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
-    
+
     const result = await verify(tokenString, { expectedState: undefined });
     expect(result.state).toBeUndefined();
+  });
+
+  it("should handle custom message validation throwing an error", async () => {
+    const customValidateMessage = vi.fn().mockImplementation(() => {
+      throw new Error("Custom message validation error");
+    });
+    const tokenString = createAuthToken(baseAuthData);
+    await expect(
+      verify(tokenString, {
+        validateMessage: customValidateMessage,
+      }),
+    ).rejects.toThrow("Custom message validation error");
+    expect(customValidateMessage).toHaveBeenCalledWith(baseAuthData.message);
+  });
+
+  it("should succeed with empty string message if expectedMessage is also an empty string", async () => {
+    const authDataEmptyMessage: NearAuthData = {
+      ...baseAuthData,
+      message: "",
+    };
+    const tokenString = createAuthToken(authDataEmptyMessage);
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ account_ids: [authDataEmptyMessage.account_id] }),
+    });
+    vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
+
+    const result = await verify(tokenString, { expectedMessage: "" });
+    expect(result.message).toBe("");
+  });
+
+  it("should reject if expectedMessage is an empty string but token message is not", async () => {
+    const tokenString = createAuthToken(baseAuthData); // baseAuthData.message is "test message"
+    await expect(
+      verify(tokenString, {
+        expectedMessage: "",
+      }),
+    ).rejects.toThrow("Message mismatch: expected '', got 'test message'");
+  });
+
+  it("should pass empty string message to custom validateMessage function", async () => {
+    const authDataEmptyMessage: NearAuthData = {
+      ...baseAuthData,
+      message: "",
+    };
+    const tokenString = createAuthToken(authDataEmptyMessage);
+    const customValidateMessage = vi.fn().mockReturnValue(true);
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ account_ids: [authDataEmptyMessage.account_id] }),
+    });
+    vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
+
+    await verify(tokenString, {
+      validateMessage: customValidateMessage,
+    });
+    expect(customValidateMessage).toHaveBeenCalledWith("");
   });
 });
