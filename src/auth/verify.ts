@@ -1,13 +1,12 @@
 import { base64 } from "@scure/base";
 import {
-  TAG,
+  createNEP413Payload,
   hashPayload,
-  serializePayload,
   verifySignature,
 } from "../crypto/crypto.js";
 import type {
   NearAuthData,
-  NearAuthPayload,
+  SignedPayload,
   VerificationResult,
   VerifyOptions,
 } from "../types.js";
@@ -65,27 +64,28 @@ export async function verify(
   }
 
   const {
-    account_id: accountId,
-    public_key: publicKey,
+    accountId,
+    publicKey,
     signature: signatureB64,
     message: messageString,
-    nonce: nonceFromAuthData, // nonce from the NearAuthPayload
+    nonce: nonceFromAuthData, // nonce from NearAuthData as number[]
     recipient: recipientFromAuthData,
-    callback_url,
+    callbackUrl,
+    state,
   } = authData;
 
-  // Nonce validation - convert number[] back to Uint8Array for validation functions
-  const nonceAsUint8Array = new Uint8Array(nonceFromAuthData);
+  // Convert number[] back to Uint8Array
+  const nonce = new Uint8Array(nonceFromAuthData);
 
-  if (options && "validateNonce" in options && options.validateNonce) {
-    // Custom nonce validation
-    if (!options.validateNonce(nonceAsUint8Array)) {
+  // Validate nonce
+  if (options?.validateNonce) {
+    if (!options.validateNonce(nonce)) {
       throw new Error("Custom nonce validation failed.");
     }
   } else {
     // Standard nonce validation using nonce from AuthData (which was part of the signed payload)
     try {
-      validateNonce(nonceAsUint8Array, options?.nonceMaxAge);
+      validateNonce(nonce, options?.nonceMaxAge);
     } catch (error) {
       throw new Error(
         `Nonce validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -93,16 +93,46 @@ export async function verify(
     }
   }
 
-  // Validate expected recipient if provided
-  if (
-    options?.expectedRecipient &&
-    recipientFromAuthData !== options.expectedRecipient
-  ) {
-    throw new Error(
-      `Recipient mismatch: expected '${options.expectedRecipient}', but recipient is '${recipientFromAuthData}'.`,
-    );
+  // Validate recipient
+  if (options?.validateRecipient) {
+    if (!options.validateRecipient(recipientFromAuthData)) {
+      throw new Error("Custom recipient validation failed.");
+    }
+  } else if (options && typeof options.expectedRecipient === "string") {
+    if (recipientFromAuthData !== options.expectedRecipient) {
+      throw new Error(
+        `Recipient mismatch: expected '${options.expectedRecipient}', but recipient is '${recipientFromAuthData}'.`,
+      );
+    }
   }
 
+  // Validate state
+  if (options?.validateState) {
+    if (!options.validateState(state!)) {
+      throw new Error("Custom state validation failed.");
+    }
+  } else if (options && typeof options.expectedState === "string") {
+    if (state !== options.expectedState) {
+      throw new Error(
+        `State mismatch: expected '${options.expectedState}', got '${state?.toString() || "undefined"}'.`,
+      );
+    }
+  }
+
+  // Validate message
+  if (options?.validateMessage) {
+    if (!options.validateMessage(messageString)) {
+      throw new Error("Custom message validation failed.");
+    }
+  } else if (options && typeof options.expectedMessage === "string") {
+    if (messageString !== options.expectedMessage) {
+      throw new Error(
+        `Message mismatch: expected '${options.expectedMessage}', got '${messageString}'.`,
+      );
+    }
+  }
+
+  // Validate publicKey
   const requireFullAccessKey = options?.requireFullAccessKey ?? true;
   const ownerCheckResult = await verifyPublicKeyOwner(
     accountId,
@@ -118,16 +148,16 @@ export async function verify(
   }
 
   // Reconstruct the payload that was originally signed
-  const payloadToVerify: NearAuthPayload = {
-    tag: TAG,
+  const nep413PayloadToVerify: SignedPayload = {
     message: messageString,
-    nonce: nonceFromAuthData, // The nonce that was part of the signed payload
-    receiver: recipientFromAuthData, // The recipient that was part of the signed payload
-    callback_url: callback_url || null,
+    nonce: Array.from(nonce),
+    recipient: recipientFromAuthData,
+    callbackUrl,
   };
 
-  const serializedPayloadToVerify = serializePayload(payloadToVerify);
-  const payloadHash = hashPayload(serializedPayloadToVerify);
+  const dataThatWasHashed = createNEP413Payload(nep413PayloadToVerify);
+
+  const payloadHash = hashPayload(dataThatWasHashed);
   const signatureBytes = base64.decode(signatureB64);
 
   try {
@@ -144,6 +174,7 @@ export async function verify(
     accountId: accountId,
     message: messageString,
     publicKey: publicKey,
-    callbackUrl: callback_url || undefined,
+    callbackUrl: callbackUrl || undefined,
+    state: state || undefined,
   };
 }

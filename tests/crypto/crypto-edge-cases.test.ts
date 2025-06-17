@@ -1,12 +1,12 @@
 import * as near from "near-api-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  createNEP413Payload,
   ED25519_PREFIX,
   hashPayload,
-  serializePayload,
   verifySignature,
 } from "../../src/crypto/crypto.js";
-import type { NearAuthPayload } from "../../src/types.js";
+import { SignedPayload } from "../../src/schemas.js";
 
 describe("Crypto Module - Edge Cases & Core Functionality", () => {
   afterEach(() => {
@@ -91,28 +91,26 @@ describe("Crypto Module - Edge Cases & Core Functionality", () => {
 
   describe("serializePayload", () => {
     it("should serialize payload with all optional fields", () => {
-      const payload: NearAuthPayload = {
-        tag: 2147484061,
+      const payload: SignedPayload = {
         message: "test message",
         nonce: new Array(32).fill(1),
-        receiver: "test.near",
-        callback_url: "https://example.com/callback",
+        recipient: "test.near",
+        callbackUrl: "https://example.com/callback",
       };
-      const serialized = serializePayload(payload);
+      const serialized = createNEP413Payload(payload);
       expect(serialized).toBeInstanceOf(Uint8Array);
       expect(serialized.length).toBeGreaterThan(0);
     });
 
-    it("should serialize payload without optional callback_url", () => {
+    it("should serialize payload without optional callbackUrl", () => {
       // @ts-expect-error we're specifically testing a missing field
-      const payload: NearAuthPayload = {
-        tag: 2147484061,
+      const payload: SignedPayload = {
         message: "test message",
         nonce: new Array(32).fill(1),
-        receiver: "test.near",
-        // callback_url is undefined
+        recipient: "test.near",
+        // callbackUrl is undefined
       };
-      const serialized = serializePayload(payload);
+      const serialized = createNEP413Payload(payload);
       expect(serialized).toBeInstanceOf(Uint8Array);
       expect(serialized.length).toBeGreaterThan(0);
     });

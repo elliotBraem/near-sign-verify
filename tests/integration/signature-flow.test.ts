@@ -64,12 +64,11 @@ describe("NEAR Signature Flow Integration Test", () => {
       signer: wrongKeyPair.toString(), // Signing with this wrong key
       accountId: intendedAccountId, // But claiming this account ID
       recipient,
-      message: "Test wrong key",
       nonce: specificNonce,
       callbackUrl,
     };
 
-    const authTokenString = await sign(signOptions);
+    const authTokenString = await sign("Test wrong key", signOptions);
 
     await expect(
       verify(authTokenString, { expectedRecipient: recipient }),
@@ -85,11 +84,10 @@ describe("NEAR Signature Flow Integration Test", () => {
       signer: FAK_KEY_PAIR.toString(),
       accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
       recipient,
-      message: "Test with FAK",
       nonce: specificNonce,
       callbackUrl,
     };
-    const authTokenString = await sign(signOptions);
+    const authTokenString = await sign("Test with FAK", signOptions);
 
     const verificationResult: VerificationResult = await verify(
       authTokenString,
@@ -110,10 +108,12 @@ describe("NEAR Signature Flow Integration Test", () => {
       signer: FCAK_KEY_PAIR.toString(),
       accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
       recipient,
-      message: "Test with FCAK, requireFullAccessKey=true",
       nonce: specificNonce,
     };
-    const authTokenString = await sign(signOptions);
+    const authTokenString = await sign(
+      "Test with FCAK, requireFullAccessKey=true",
+      signOptions,
+    );
 
     const verifyOpts: VerifyOptions = {
       requireFullAccessKey: true,
@@ -132,10 +132,12 @@ describe("NEAR Signature Flow Integration Test", () => {
       signer: FCAK_KEY_PAIR.toString(),
       accountId: SIGNVERIFYTESTS_ACCOUNT_ID,
       recipient,
-      message: "Test with FCAK, requireFullAccessKey=false",
       nonce: specificNonce,
     };
-    const authTokenString = await sign(signOptions);
+    const authTokenString = await sign(
+      "Test with FCAK, requireFullAccessKey=false",
+      signOptions,
+    );
 
     const verifyOpts: VerifyOptions = {
       requireFullAccessKey: false,
@@ -159,10 +161,12 @@ describe("NEAR Signature Flow Integration Test", () => {
       signer: randomKeyPair.toString(),
       accountId: claimedAccountId,
       recipient,
-      message: "Test with random unassociated PK",
       nonce: specificNonce,
     };
-    const authTokenString = await sign(signOptions);
+    const authTokenString = await sign(
+      "Test with random unassociated PK",
+      signOptions,
+    );
 
     await expect(
       verify(authTokenString, { expectedRecipient: recipient }),
