@@ -1,0 +1,8 @@
+[
+  {
+    "name": "minified + gzipped",
+    "path": "dist/index.js",
+    "limit": "26 KB",
+    "gzip": true
+  }
+]

@@ -11,6 +11,8 @@
     <strong>Create and validate <a href="https://github.com/near/NEPs/blob/master/neps/nep-0413.md" target="_blank">NEP-413</a> signed messages for API authentication</strong>
   </p>
 
+  [![npm bundle size](https://img.shields.io/bundlephobia/minzip/near-sign-verify@latest)](https://bundlephobia.com/result?p=near-sign-verify@latest)
+
 </div>
 
 ```bash

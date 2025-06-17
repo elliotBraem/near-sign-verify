@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --minify --sourcemap",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "size": "size-limit",
     "lint": "eslint src --ext .ts",
     "fmt": "prettier --write '**/*.{js,jsx,ts,tsx,json}'",
     "fmt:check": "prettier --check '**/*.{js,jsx,ts,tsx,json}'",
@@ -40,7 +41,9 @@
     "@noble/curves": "^1.9.1",
     "@noble/hashes": "^1.8.0",
     "@scure/base": "^1.2.6",
-    "@zorsh/zorsh": "^0.3.3"
+    "@size-limit/preset-small-lib": "^11.2.0",
+    "@zorsh/zorsh": "^0.3.3",
+    "size-limit": "^11.2.0"
   },
   "devDependencies": {
     "near-api-js": "^5.1.1",
