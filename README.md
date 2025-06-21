@@ -131,6 +131,7 @@ This strategy leverages your backend to manage nonces and states, providing the 
 ```typescript
 // --- Client-side ---
 import { sign } from "near-sign-verify";
+import { toHex, fromHex } from "@fastnear/utils";
 
 onClick("Login with NEAR Button", async () => {
   // Step 1 & 2: Client requests auth parameters from Backend
@@ -142,7 +143,7 @@ onClick("Login with NEAR Button", async () => {
   const authToken = await sign(message, {
     signer: wallet, // Your wallet object (e.g., from fastintear)
     recipient: recipient, // From backend
-    nonce: new Uint8Array(nonce), // Nonce from backend (ensure it's Uint8Array)
+    nonce: fromHex(nonce), // Nonce from backend (ensure it's Uint8Array)
     state: state, // State from backend
     // callbackUrl: callbackUrl, // Optional, if flow requires a backend redirect
   });
@@ -170,14 +171,14 @@ const usedNonces = new Set<string>(); // example
 
 // Endpoint to initiate login flow
 POST("https://your-service.com/api/auth/initiate-login", (req, res) => {
-  const state = crypto.randomBytes(16).toString('hex'); // Generate secure random state
-  const nonce = crypto.randomBytes(32); // Generate secure random 32-byte nonce
+  const state = randomBytes(32).toString("hex"); // Generate secure random state
+  const nonce = randomBytes(32).toString("hex");  // Generate secure random 32-byte nonce
   const message = "Authorize my app";
   const recipient = "your-service.com";
 
   // Store the request details for later verification
   authRequests.set(state, {
-    nonce: Array.from(nonce),
+    nonce: nonce,
     message: message,
     recipient: recipient,
     timestamp: Date.now() 
@@ -186,7 +187,7 @@ POST("https://your-service.com/api/auth/initiate-login", (req, res) => {
   res.json({
     state: state,
     message: message, // The message the user will see and sign
-    nonce: Array.from(nonce), // Send as array for JSON
+    nonce: nonce,
     recipient: recipient
   });
 });
@@ -211,14 +212,9 @@ POST("https://your-service.com/api/auth/verify-request", async (req, res) => {
     const result = await verify(authToken, {
       expectedState: storedAuthRequest.state // Ensure state from token matches the one used to retrieve storedAuthRequest
       validateNonce: (nonceFromToken: Uint8Array): boolean => {
-        const expectedNonceForState = new Uint8Array(storedAuthRequest.nonce);
-        
-        // Convert nonces to comparable strings (e.g., hex)
         const receivedNonceHex = toHex(nonceFromToken);
-        const expectedNonceHex = toHex(expectedNonceForState);
-
-        // Does this nonce match the one we have stored for this state?
-        if (receivedNonceHex !== expectedNonceHex) {
+        
+        if (receivedNonceHex !== storedAuthRequest.nonce) {
           console.error("Nonce mismatch: Received nonce does not match expected nonce for the state.");
           return false;
         }
