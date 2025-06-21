@@ -33,13 +33,16 @@ This example shows how to use `fastintear` (or any wallet object that implements
 This simple strategy is fine for a non-production application and provides a basic timestamp-based nonce validation.
 
 ```typescript
-import * as near from "fastintear"; // or any wallet object that implements signMessage
+import * as wallet from "fastintear"; // or any wallet object that implements signMessage
 import { sign, verify } from 'near-sign-verify';
+
+// works with near-wallet-selector
+// const { wallet } = useWalletSelector();
 
 // --- Client-side: Create signed token from wallet ---
 
 const authToken = await sign("login attempt", {
-  signer: near, // has signMessage method
+  signer: wallet, // has signMessage method
   recipient: 'your-service.near', // can be a NEAR account ID or a URL/domain
 });
 
