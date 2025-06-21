@@ -81,7 +81,7 @@ export async function verify<TNonce extends NonceType = Uint8Array>(
   // Validate nonce
   if (options?.validateNonce) {
     // For custom validation, pass the nonce as the original type
-    if (!options.validateNonce(nonce as TNonce)) {
+    if (!options.validateNonce(nonce)) {
       throw new Error("Custom nonce validation failed.");
     }
   } else {

@@ -5,15 +5,10 @@ import {
   createNEP413Payload,
   hashPayload,
 } from "../crypto/crypto.js";
-import type {
-  NonceType,
-  SignOptions,
-  SignedPayload,
-  WalletInterface,
-} from "../types.js";
-import { ensureUint8Array, generateNonce } from "../utils/nonce.js";
-import { createAuthToken } from "./createAuthToken.js";
 import { NearAuthData } from "../schemas.js";
+import type { SignOptions, SignedPayload, WalletInterface } from "../types.js";
+import { generateNonce } from "../utils/nonce.js";
+import { createAuthToken } from "./createAuthToken.js";
 
 interface InternalSignParameters {
   message: string;

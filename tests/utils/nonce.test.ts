@@ -1,9 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import {
-  ensureUint8Array,
-  generateNonce,
-  validateNonce,
-} from "../../src/utils/nonce.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { generateNonce, validateNonce } from "../../src/utils/nonce.js";
 
 describe("Nonce Utilities", () => {
   beforeEach(() => {

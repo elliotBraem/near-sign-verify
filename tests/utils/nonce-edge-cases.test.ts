@@ -1,9 +1,6 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { generateNonce, validateNonce } from "../../src/utils/nonce.js";
 import { describe, expect, it, vi, afterEach } from "vitest";
-import {
-  ensureUint8Array,
-  validateNonce,
-  generateNonce,
-} from "../../src/utils/nonce.js";
 
 describe("nonce - Edge Cases", () => {
   afterEach(() => {

@@ -1,7 +1,5 @@
 export { NearAuthData, SignedPayload } from "./schemas.js";
 
-export type NonceType = Uint8Array | Buffer | string | number;
-
 /**
  * Options for the main `sign` function.
  */
