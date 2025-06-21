@@ -1,7 +1,51 @@
+import { NonceType } from "../types.js";
+
 /**
  * Default max age for nonce validation (24 hours in milliseconds)
  */
+
 const DEFAULT_MAX_AGE = 24 * 60 * 60 * 1000;
+
+function isBuffer(obj: any): boolean {
+  return typeof Buffer !== "undefined" && 
+    obj !== null && 
+    typeof obj === "object" && 
+    Buffer.isBuffer(obj);
+}
+
+export function ensureUint8Array(nonce: NonceType): Uint8Array {
+  let bytes: Uint8Array;
+  
+  if (nonce instanceof Uint8Array) {
+    bytes = nonce;
+    // If it's already exactly 32 bytes, return it directly
+    if (bytes.length === 32) {
+      return bytes;
+    }
+  } else if (isBuffer(nonce)) {
+    bytes = new Uint8Array(nonce as any);
+  } else if (typeof nonce === "string") {
+    const encoder = new TextEncoder();
+    bytes = encoder.encode(nonce);
+  } else if (typeof nonce === "number") {
+    const encoder = new TextEncoder();
+    bytes = encoder.encode(nonce.toString());
+  } else {
+    throw new Error("Unsupported nonce type");
+  }
+  
+  // Pad or truncate to 32 bytes for all types
+  return padToLength(bytes, 32);
+}
+
+function padToLength(array: Uint8Array, length: number): Uint8Array {
+  if (array.length >= length) {
+    return array.slice(0, length);
+  }
+  const result = new Uint8Array(length);
+  result.set(array);
+  return result;
+}
 
 /**
  * Generate a timestamp-based nonce
