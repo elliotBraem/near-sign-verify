@@ -186,13 +186,13 @@ describe("Sign Function", () => {
     expect(verificationResult).toBeDefined();
     expect(verificationResult.accountId).toBe(accountId);
   });
-  
+
   it("should sign with a Buffer nonce", async () => {
     // Skip test if Buffer is not available (browser environment)
     if (typeof Buffer === "undefined") {
       return;
     }
-    
+
     const recipient = "buffer-nonce-app.near";
     const bufferNonce = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
@@ -231,12 +231,12 @@ describe("Sign Function", () => {
 
     expect(verificationResult).toBeDefined();
     expect(verificationResult.accountId).toBe(accountId);
-    
+
     // Parse the token to check the raw nonce data
     const parsedNearAuthData: NearAuthData = parseAuthToken(authTokenString);
     const nonceFromToken = new Uint8Array(parsedNearAuthData.nonce);
     expect(nonceFromToken.length).toBe(32); // Should be padded to 32 bytes
-    
+
     // Check that the first bytes match our original buffer
     for (let i = 0; i < bufferNonce.length; i++) {
       expect(nonceFromToken[i]).toBe(bufferNonce[i]);

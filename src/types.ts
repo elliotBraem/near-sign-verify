@@ -25,7 +25,7 @@ export interface SignOptions<TNonce extends NonceType = Uint8Array> {
   /**
    * Optional nonce. If not provided, a nonce will be generated.
    */
-  nonce?: TNonce
+  nonce?: TNonce;
   /**
    * Optional state object for authentication purposes, to be verified on backend.
    * This is recommended to help mitigate CSRF attacks.

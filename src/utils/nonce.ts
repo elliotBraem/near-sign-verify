@@ -7,15 +7,17 @@ import { NonceType } from "../types.js";
 const DEFAULT_MAX_AGE = 24 * 60 * 60 * 1000;
 
 function isBuffer(obj: any): boolean {
-  return typeof Buffer !== "undefined" && 
-    obj !== null && 
-    typeof obj === "object" && 
-    Buffer.isBuffer(obj);
+  return (
+    typeof Buffer !== "undefined" &&
+    obj !== null &&
+    typeof obj === "object" &&
+    Buffer.isBuffer(obj)
+  );
 }
 
 export function ensureUint8Array(nonce: NonceType): Uint8Array {
   let bytes: Uint8Array;
-  
+
   if (nonce instanceof Uint8Array) {
     bytes = nonce;
     // If it's already exactly 32 bytes, return it directly
@@ -33,7 +35,7 @@ export function ensureUint8Array(nonce: NonceType): Uint8Array {
   } else {
     throw new Error("Unsupported nonce type");
   }
-  
+
   // Pad or truncate to 32 bytes for all types
   return padToLength(bytes, 32);
 }

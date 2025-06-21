@@ -262,17 +262,19 @@ describe("verify", () => {
     expect(customValidateNonce).toHaveBeenCalledWith(new Uint8Array(32));
     expect(fetch).not.toHaveBeenCalled();
   });
-  
+
   it("should validate with string nonce type", async () => {
     // Mock ensureUint8Array to handle string nonce
-    vi.spyOn(nonceModule, "ensureUint8Array").mockImplementation((nonce: NonceType) => {
-      if (typeof nonce === "string") {
-        const encoder = new TextEncoder();
-        return encoder.encode(nonce);
-      }
-      return nonce as Uint8Array;
-    });
-    
+    vi.spyOn(nonceModule, "ensureUint8Array").mockImplementation(
+      (nonce: NonceType) => {
+        if (typeof nonce === "string") {
+          const encoder = new TextEncoder();
+          return encoder.encode(nonce);
+        }
+        return nonce as Uint8Array;
+      },
+    );
+
     const customValidateNonce = vi.fn().mockReturnValue(true);
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
@@ -283,21 +285,23 @@ describe("verify", () => {
     const result = await verify<string>(authTokenString, {
       validateNonce: customValidateNonce,
     });
-    
+
     expect(result.accountId).toBe(baseAuthData.accountId);
     expect(customValidateNonce).toHaveBeenCalled();
   });
-  
+
   it("should validate with number nonce type", async () => {
     // Mock ensureUint8Array to handle number nonce
-    vi.spyOn(nonceModule, "ensureUint8Array").mockImplementation((nonce: NonceType) => {
-      if (typeof nonce === "number") {
-        const encoder = new TextEncoder();
-        return encoder.encode(nonce.toString());
-      }
-      return nonce as Uint8Array;
-    });
-    
+    vi.spyOn(nonceModule, "ensureUint8Array").mockImplementation(
+      (nonce: NonceType) => {
+        if (typeof nonce === "number") {
+          const encoder = new TextEncoder();
+          return encoder.encode(nonce.toString());
+        }
+        return nonce as Uint8Array;
+      },
+    );
+
     const customValidateNonce = vi.fn().mockReturnValue(true);
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
@@ -308,7 +312,7 @@ describe("verify", () => {
     const result = await verify<number>(authTokenString, {
       validateNonce: customValidateNonce,
     });
-    
+
     expect(result.accountId).toBe(baseAuthData.accountId);
     expect(customValidateNonce).toHaveBeenCalled();
   });

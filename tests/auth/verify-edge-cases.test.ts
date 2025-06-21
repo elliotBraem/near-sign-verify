@@ -304,34 +304,36 @@ describe("verify - Edge Cases", () => {
     });
     expect(customValidateMessage).toHaveBeenCalledWith("");
   });
-  
+
   it("should handle extreme nonce types with custom validation", async () => {
     const tokenString = createAuthToken(baseAuthData);
-    
+
     // Test with extremely large number
     const largeNumberValidation = vi.fn().mockReturnValue(true);
-    vi.spyOn(nonceModule, "ensureUint8Array").mockImplementation((nonce: NonceType) => {
-      return new Uint8Array(32);
-    });
-    
+    vi.spyOn(nonceModule, "ensureUint8Array").mockImplementation(
+      (nonce: NonceType) => {
+        return new Uint8Array(32);
+      },
+    );
+
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ account_ids: [baseAuthData.accountId] }),
     });
     vi.spyOn(cryptoModule, "verifySignature").mockResolvedValue(true);
-    
+
     await verify<number>(tokenString, {
       validateNonce: largeNumberValidation,
     });
     expect(largeNumberValidation).toHaveBeenCalled();
-    
+
     // Test with very long string
     const longStringValidation = vi.fn().mockReturnValue(true);
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ account_ids: [baseAuthData.accountId] }),
     });
-    
+
     await verify<string>(tokenString, {
       validateNonce: longStringValidation,
     });

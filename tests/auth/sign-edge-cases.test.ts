@@ -114,43 +114,43 @@ describe("sign - Edge Cases", () => {
     expect(typeof result).toBe("string");
     expect(mockWallet.signMessage).toHaveBeenCalled();
   });
-  
+
   it("should handle string nonce type", async () => {
     const keyPair = near.KeyPair.fromRandom("ed25519");
     const stringNonce = "test-string-nonce-123";
-    
+
     // Mock ensureUint8Array to track conversion
     const mockEnsureUint8Array = vi.spyOn(nonceModule, "ensureUint8Array");
     const mockUint8Array = new Uint8Array(32);
     mockEnsureUint8Array.mockReturnValue(mockUint8Array);
-    
+
     const result = await sign<string>("hello", {
       signer: keyPair.toString(),
       accountId: "test.near",
       recipient: "recipient.near",
       nonce: stringNonce,
     });
-    
+
     expect(typeof result).toBe("string");
     expect(mockEnsureUint8Array).toHaveBeenCalledWith(stringNonce);
   });
-  
+
   it("should handle number nonce type", async () => {
     const keyPair = near.KeyPair.fromRandom("ed25519");
     const numberNonce = 12345678;
-    
+
     // Mock ensureUint8Array to track conversion
     const mockEnsureUint8Array = vi.spyOn(nonceModule, "ensureUint8Array");
     const mockUint8Array = new Uint8Array(32);
     mockEnsureUint8Array.mockReturnValue(mockUint8Array);
-    
+
     const result = await sign<number>("hello", {
       signer: keyPair.toString(),
       accountId: "test.near",
       recipient: "recipient.near",
       nonce: numberNonce,
     });
-    
+
     expect(typeof result).toBe("string");
     expect(mockEnsureUint8Array).toHaveBeenCalledWith(numberNonce);
   });
