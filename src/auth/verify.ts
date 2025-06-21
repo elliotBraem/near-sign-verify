@@ -6,11 +6,12 @@ import {
 } from "../crypto/crypto.js";
 import type {
   NearAuthData,
+  NonceType,
   SignedPayload,
   VerificationResult,
   VerifyOptions,
 } from "../types.js";
-import { validateNonce } from "../utils/nonce.js";
+import { ensureUint8Array, validateNonce } from "../utils/nonce.js";
 import { parseAuthToken } from "./parseAuthToken.js";
 
 async function verifyPublicKeyOwner(
@@ -52,9 +53,9 @@ async function verifyPublicKeyOwner(
  * @param options Optional verification parameters.
  * @returns A promise that resolves to VerificationResult if successful.
  */
-export async function verify(
+export async function verify<TNonce extends NonceType = Uint8Array>(
   authTokenString: string,
-  options?: VerifyOptions,
+  options?: VerifyOptions<TNonce>,
 ): Promise<VerificationResult> {
   let authData: NearAuthData;
   try {
@@ -79,13 +80,14 @@ export async function verify(
 
   // Validate nonce
   if (options?.validateNonce) {
-    if (!options.validateNonce(nonce)) {
+    // For custom validation, pass the nonce as the original type
+    if (!options.validateNonce(nonce as TNonce)) {
       throw new Error("Custom nonce validation failed.");
     }
   } else {
     // Standard nonce validation using nonce from AuthData (which was part of the signed payload)
     try {
-      validateNonce(nonce, options?.nonceMaxAge);
+      validateNonce(ensureUint8Array(nonce), options?.nonceMaxAge);
     } catch (error) {
       throw new Error(
         `Nonce validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
