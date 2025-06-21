@@ -5,15 +5,10 @@ import {
   createNEP413Payload,
   hashPayload,
 } from "../crypto/crypto.js";
-import type {
-  NonceType,
-  SignOptions,
-  SignedPayload,
-  WalletInterface,
-} from "../types.js";
-import { ensureUint8Array, generateNonce } from "../utils/nonce.js";
-import { createAuthToken } from "./createAuthToken.js";
 import { NearAuthData } from "../schemas.js";
+import type { SignOptions, SignedPayload, WalletInterface } from "../types.js";
+import { generateNonce } from "../utils/nonce.js";
+import { createAuthToken } from "./createAuthToken.js";
 
 interface InternalSignParameters {
   message: string;
@@ -140,19 +135,18 @@ function detectSignerType(
  * @param options The signing options.
  * @returns A promise that resolves to the final AuthToken string.
  */
-export async function sign<TNonce extends NonceType = Uint8Array>(
+export async function sign(
   message: string,
-  options: SignOptions<TNonce>,
+  options: SignOptions,
 ): Promise<string> {
   const { signer, accountId, recipient, callbackUrl, nonce, state } = options;
 
   const currentNonce = nonce || generateNonce();
-  const nonceAsUint8Array = ensureUint8Array(currentNonce);
 
   const internalParams: InternalSignParameters = {
     message: message,
     recipient: recipient,
-    nonce: nonceAsUint8Array,
+    nonce: currentNonce,
     callbackUrl: callbackUrl || null,
     state: state || null,
   };

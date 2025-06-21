@@ -1,11 +1,9 @@
 export { NearAuthData, SignedPayload } from "./schemas.js";
 
-export type NonceType = Uint8Array | Buffer | string | number;
-
 /**
  * Options for the main `sign` function.
  */
-export interface SignOptions<TNonce extends NonceType = Uint8Array> {
+export interface SignOptions {
   /**
    * The signer, which can be a NEAR KeyPair or a wallet object.
    * The library will detect the type at runtime.
@@ -25,7 +23,7 @@ export interface SignOptions<TNonce extends NonceType = Uint8Array> {
   /**
    * Optional nonce. If not provided, a nonce will be generated.
    */
-  nonce?: TNonce;
+  nonce?: Uint8Array;
   /**
    * Optional state object for authentication purposes, to be verified on backend.
    * This is recommended to help mitigate CSRF attacks.
@@ -42,7 +40,7 @@ export interface SignOptions<TNonce extends NonceType = Uint8Array> {
 /**
  * Options for validating the nonce in the `verify` function.
  */
-type NonceValidationOptions<TNonce extends NonceType = Uint8Array> =
+type NonceValidationOptions =
   | {
       /**
        * Maximum age of the nonce in milliseconds.
@@ -58,7 +56,7 @@ type NonceValidationOptions<TNonce extends NonceType = Uint8Array> =
        * Should return true if the nonce is valid, false otherwise.
        * This option is mutually exclusive with `nonceMaxAge`.
        */
-      validateNonce: (nonce: TNonce) => boolean;
+      validateNonce: (nonce: Uint8Array) => boolean;
       nonceMaxAge?: never; // Ensures nonceMaxAge is not provided with validateNonce
     };
 
@@ -132,7 +130,7 @@ type MessageValidationOptions =
 /**
  * Options for the main `verify` function.
  */
-export type VerifyOptions<TNonce extends NonceType = Uint8Array> = {
+export type VerifyOptions = {
   /**
    * Whether the public key used for signing must be a Full Access Key.
    * Defaults to true. If false, Function Call Access Keys are permitted
@@ -141,7 +139,7 @@ export type VerifyOptions<TNonce extends NonceType = Uint8Array> = {
    * Full access is highly recommended, otherwise ensure message, nonce, and state validation are enforced.
    */
   requireFullAccessKey?: boolean;
-} & NonceValidationOptions<TNonce> &
+} & NonceValidationOptions &
   RecipientValidationOptions &
   StateValidationOptions &
   MessageValidationOptions;

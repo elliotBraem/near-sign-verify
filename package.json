@@ -1,6 +1,6 @@
 {
   "name": "near-sign-verify",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Creates and validates NEAR signatures for API authentication.",
   "type": "module",
   "main": "dist/index.js",

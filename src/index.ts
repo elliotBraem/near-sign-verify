@@ -13,7 +13,6 @@ export { stringToUint8Array, uint8ArrayToString } from "./utils/encoding.js";
 // --- Core Types ---
 export type {
   NearAuthData,
-  NonceType,
   SignOptions,
   VerificationResult,
   VerifyOptions,
