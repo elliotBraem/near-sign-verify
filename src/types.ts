@@ -3,7 +3,7 @@ export { NearAuthData, SignedPayload } from "./schemas.js";
 /**
  * Options for the main `sign` function.
  */
-export interface SignOptions {
+export interface SignOptions<TNonce extends NonceType = Uint8Array> {
   /**
    * The signer, which can be a NEAR KeyPair or a wallet object.
    * The library will detect the type at runtime.
@@ -23,7 +23,7 @@ export interface SignOptions {
   /**
    * Optional nonce. If not provided, a nonce will be generated.
    */
-  nonce?: Uint8Array;
+  nonce?: TNonce;
   /**
    * Optional state object for authentication purposes, to be verified on backend.
    * This is recommended to help mitigate CSRF attacks.
@@ -40,7 +40,7 @@ export interface SignOptions {
 /**
  * Options for validating the nonce in the `verify` function.
  */
-type NonceValidationOptions =
+type NonceValidationOptions<TNonce extends NonceType = Uint8Array> =
   | {
       /**
        * Maximum age of the nonce in milliseconds.
@@ -56,7 +56,7 @@ type NonceValidationOptions =
        * Should return true if the nonce is valid, false otherwise.
        * This option is mutually exclusive with `nonceMaxAge`.
        */
-      validateNonce: (nonce: Uint8Array) => boolean;
+      validateNonce: (nonce: TNonce) => boolean;
       nonceMaxAge?: never; // Ensures nonceMaxAge is not provided with validateNonce
     };
 
@@ -130,7 +130,7 @@ type MessageValidationOptions =
 /**
  * Options for the main `verify` function.
  */
-export type VerifyOptions = {
+export type VerifyOptions<TNonce extends NonceType = Uint8Array> = {
   /**
    * Whether the public key used for signing must be a Full Access Key.
    * Defaults to true. If false, Function Call Access Keys are permitted
@@ -139,7 +139,7 @@ export type VerifyOptions = {
    * Full access is highly recommended, otherwise ensure message, nonce, and state validation are enforced.
    */
   requireFullAccessKey?: boolean;
-} & NonceValidationOptions &
+} & NonceValidationOptions<TNonce> &
   RecipientValidationOptions &
   StateValidationOptions &
   MessageValidationOptions;

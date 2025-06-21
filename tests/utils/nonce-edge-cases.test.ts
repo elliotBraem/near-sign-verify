@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { generateNonce, validateNonce } from "../../src/utils/nonce.js";
+import { describe, expect, it, vi, afterEach } from "vitest";
 
 describe("nonce - Edge Cases", () => {
   afterEach(() => {
@@ -155,5 +156,56 @@ describe("nonce - Edge Cases", () => {
     expect(() => validateNonce(invalidNonce)).toThrow(
       "Invalid timestamp in nonce",
     );
+  });
+
+  describe("ensureUint8Array - Edge Cases", () => {
+    it("should handle empty string", () => {
+      const result = ensureUint8Array("");
+      expect(result).toBeInstanceOf(Uint8Array);
+      expect(result.length).toBe(32); // Padded to 32 bytes
+    });
+
+    it("should handle zero as number", () => {
+      const result = ensureUint8Array(0);
+      expect(result).toBeInstanceOf(Uint8Array);
+      expect(result.length).toBe(32); // Padded to 32 bytes
+
+      const decoder = new TextDecoder();
+      const decoded = decoder.decode(result);
+      expect(decoded.startsWith("0")).toBe(true);
+    });
+
+    it("should handle very large numbers", () => {
+      const largeNum = Number.MAX_SAFE_INTEGER;
+      const result = ensureUint8Array(largeNum);
+      expect(result).toBeInstanceOf(Uint8Array);
+      expect(result.length).toBe(32); // Padded to 32 bytes
+
+      const decoder = new TextDecoder();
+      const decoded = decoder.decode(result);
+      expect(decoded.startsWith(largeNum.toString())).toBe(true);
+    });
+
+    it("should handle unicode strings", () => {
+      const unicodeStr = "测试字符串";
+      const result = ensureUint8Array(unicodeStr);
+      expect(result).toBeInstanceOf(Uint8Array);
+      expect(result.length).toBe(32); // Padded to 32 bytes
+
+      const decoder = new TextDecoder();
+      const decoded = decoder.decode(result);
+      expect(decoded.startsWith(unicodeStr)).toBe(true);
+    });
+
+    it("should handle special characters", () => {
+      const specialChars = "!@#$%^&*()_+{}|:<>?~`-=[]\\;',./";
+      const result = ensureUint8Array(specialChars);
+      expect(result).toBeInstanceOf(Uint8Array);
+      expect(result.length).toBe(32); // Padded to 32 bytes
+
+      const decoder = new TextDecoder();
+      const decoded = decoder.decode(result);
+      expect(decoded.startsWith(specialChars)).toBe(true);
+    });
   });
 });
