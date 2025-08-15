@@ -50,7 +50,7 @@ export function hashPayload(payload: Uint8Array): Uint8Array {
  * @param signatureBytes The raw signature bytes to verify.
  * @param publicKeyString The public key string (e.g., "ed25519:...") to verify against.
  */
-export async function verifySignature(
+export async function verifySignature( // remove async, update tests
   payloadHash: Uint8Array,
   signatureBytes: Uint8Array,
   publicKeyString: string,

@@ -162,6 +162,7 @@ export async function verify(
   const signatureBytes = base64.decode(signatureB64);
 
   try {
+    // TODO: remove await, update tests
     await verifySignature(payloadHash, signatureBytes, publicKey);
   } catch (error) {
     throw new Error(

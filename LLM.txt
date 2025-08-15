@@ -1,0 +1,575 @@
+# near-sign-verify - LLM Implementation Guide
+
+## Overview
+
+`near-sign-verify` is a TypeScript library that creates and validates NEP-413 compliant signed messages for API authentication on the NEAR Protocol. It provides secure wallet-based authentication with built-in protection against replay attacks, CSRF attacks, and unauthorized access.
+
+**Version**: 0.4.3  
+**License**: MIT  
+**Bundle Size**: Optimized for minimal footprint  
+**Standards**: NEP-413 (NEAR Enhancement Proposal 413)
+
+## Installation
+
+```bash
+npm install near-sign-verify
+```
+
+## Core Dependencies & Logic
+
+### Cryptographic Dependencies
+- **@noble/curves**: Ed25519 elliptic curve operations for signature creation/verification
+- **@noble/hashes**: SHA-256 hashing for payload integrity
+- **@scure/base**: Base58/Base64 encoding utilities for key/signature formatting
+
+### Serialization & Protocol
+- **@zorsh/zorsh**: Binary serialization library used by NEAR Protocol for consistent data encoding
+
+### Key Logic Components
+
+#### 1. NEP-413 Payload Creation
+```typescript
+// Creates standardized payload structure for signing
+const payload = {
+  message: string,           // User-defined message
+  nonce: Array<number>,      // 32-byte timestamp + random data
+  recipient: string,         // Target service/account
+  callbackUrl: string | null // Optional callback URL
+}
+
+// Serialization process:
+// 1. Serialize TAG (2147484061) as u32
+// 2. Serialize payload using Zorsh schema
+// 3. Concatenate TAG + payload
+// 4. Hash with SHA-256
+```
+
+#### 2. Ed25519 Signature Process
+```typescript
+// For KeyPair signing:
+// 1. Extract 32-byte seed from 64-byte private key
+// 2. Generate signature using ed25519.sign(hash, seed)
+// 3. Encode signature as Base64
+
+// For Wallet signing:
+// 1. Wallet returns "ed25519:<base58_signature>"
+// 2. Decode Base58 to raw 64-byte signature
+// 3. Re-encode as Base64 for consistency
+```
+
+#### 3. Public Key Verification Logic
+```typescript
+// Uses FastNEAR API for key ownership verification:
+// Mainnet: https://api.fastnear.com/v0/public_key/{publicKey}
+// Testnet: https://test.api.fastnear.com/v0/public_key/{publicKey}
+
+// Full Access Key (default): /v0/public_key/{key}
+// Any Access Key: /v0/public_key/{key}/all
+
+// Validates that publicKey belongs to claimed accountId
+```
+
+## API Reference
+
+### Core Functions
+
+#### `sign(message: string, options: SignOptions): Promise<string>`
+
+Creates a signed authentication token.
+
+**Parameters:**
+- `message`: The message to sign (application-specific data)
+- `options.signer`: Either a KeyPair string or WalletInterface object
+- `options.accountId`: Required for KeyPair, ignored for wallet
+- `options.recipient`: Target service identifier (domain or NEAR account)
+- `options.nonce?`: Optional 32-byte nonce (auto-generated if not provided)
+- `options.state?`: Optional state for CSRF protection
+- `options.callbackUrl?`: Optional callback URL
+
+**Returns:** Base64-encoded authentication token
+
+**Example with Wallet:**
+```typescript
+import { sign } from 'near-sign-verify';
+import * as wallet from 'fastintear';
+
+const authToken = await sign("login attempt", {
+  signer: wallet,
+  recipient: 'your-service.near'
+});
+```
+
+**Example with KeyPair:**
+```typescript
+import { sign } from 'near-sign-verify';
+import { KeyPair } from '@near-js/crypto';
+
+const keyPair = KeyPair.fromRandom('ed25519');
+const authToken = await sign("login attempt", {
+  signer: keyPair.toString(),
+  accountId: "user.near",
+  recipient: 'your-service.near'
+});
+```
+
+#### `verify(authToken: string, options?: VerifyOptions): Promise<VerificationResult>`
+
+Verifies a signed authentication token.
+
+**Parameters:**
+- `authToken`: The Base64-encoded token to verify
+- `options?`: Verification options (see VerifyOptions below)
+
+**Returns:** VerificationResult object with accountId, message, publicKey, etc.
+
+**Throws:** Error if verification fails at any step
+
+**Example:**
+```typescript
+import { verify } from 'near-sign-verify';
+
+try {
+  const result = await verify(authToken, {
+    expectedRecipient: "your-service.near",
+    nonceMaxAge: 300000, // 5 minutes
+    requireFullAccessKey: true
+  });
+  
+  console.log('Authenticated user:', result.accountId);
+  console.log('Message:', result.message);
+} catch (error) {
+  console.error('Authentication failed:', error.message);
+}
+```
+
+### Helper Functions
+
+#### `parseAuthToken(authToken: string): NearAuthData`
+
+Parses a token without verification (useful for debugging).
+
+```typescript
+import { parseAuthToken } from 'near-sign-verify';
+
+const authData = parseAuthToken(authToken);
+console.log('Account ID:', authData.accountId);
+console.log('Message:', authData.message);
+console.log('Nonce:', authData.nonce);
+```
+
+#### `generateNonce(): Uint8Array`
+
+Generates a 32-byte timestamp-based nonce.
+
+```typescript
+import { generateNonce } from 'near-sign-verify';
+
+const nonce = generateNonce();
+// Structure: [16 bytes padded timestamp][16 bytes random data]
+```
+
+## Type Definitions
+
+### Core Types
+
+```typescript
+interface SignOptions {
+  signer: string | WalletInterface;
+  accountId?: string;
+  recipient: string;
+  nonce?: Uint8Array;
+  state?: string;
+  callbackUrl?: string;
+}
+
+interface VerifyOptions {
+  requireFullAccessKey?: boolean; // Default: true
+  
+  // Nonce validation (mutually exclusive)
+  nonceMaxAge?: number;
+  validateNonce?: (nonce: Uint8Array) => boolean;
+  
+  // Recipient validation (mutually exclusive)
+  expectedRecipient?: string;
+  validateRecipient?: (recipient: string) => boolean;
+  
+  // State validation (mutually exclusive)
+  expectedState?: string;
+  validateState?: (state?: string) => boolean;
+  
+  // Message validation (mutually exclusive)
+  expectedMessage?: string;
+  validateMessage?: (message: string) => boolean;
+}
+
+interface VerificationResult {
+  accountId: string;
+  message: string;
+  publicKey: string;
+  callbackUrl?: string;
+  state?: string;
+}
+
+interface WalletInterface {
+  signMessage(params: SignMessageParams): Promise<SignedMessage>;
+}
+
+interface NearAuthData {
+  accountId: string;
+  publicKey: string;
+  signature: string;
+  message: string;
+  nonce: number[]; // 32-element array
+  recipient: string;
+  callbackUrl: string | null;
+  state: string | null;
+}
+```
+
+## Integration Patterns
+
+### 1. Simple Client-Side Authentication
+
+Best for: Non-production applications, simple authentication flows
+
+```typescript
+// Client-side
+import { sign } from 'near-sign-verify';
+import * as wallet from 'fastintear';
+
+const authToken = await sign("login attempt", {
+  signer: wallet,
+  recipient: 'your-service.near'
+});
+
+fetch('/api/protected', {
+  headers: { 'Authorization': `Bearer ${authToken}` }
+});
+
+// Server-side
+import { verify } from 'near-sign-verify';
+
+const result = await verify(authToken, {
+  expectedRecipient: "your-service.near",
+  nonceMaxAge: 300000 // 5 minutes
+});
+```
+
+### 2. KeyPair-Based Signing
+
+Best for: Testing, backend services, wallet implementations
+
+```typescript
+import { sign, verify } from 'near-sign-verify';
+import { KeyPair } from '@near-js/crypto';
+
+// Create and sign
+const keyPair = KeyPair.fromRandom('ed25519');
+const authToken = await sign("API access", {
+  signer: keyPair.toString(),
+  accountId: "service.near",
+  recipient: "api.example.com"
+});
+
+// Verify
+const result = await verify(authToken, {
+  expectedRecipient: "api.example.com",
+  requireFullAccessKey: true
+});
+```
+
+### 3. Full Backend Integration (Production Recommended)
+
+Best for: Production applications requiring maximum security
+
+```typescript
+// Backend: Initiate login endpoint
+app.post('/auth/initiate', (req, res) => {
+  const state = crypto.randomBytes(32).toString('hex');
+  const nonce = crypto.randomBytes(32).toString('hex');
+  const message = "Authorize login";
+  
+  // Store in Redis/database
+  authRequests.set(state, { nonce, message, timestamp: Date.now() });
+  
+  res.json({ state, nonce, message, recipient: "your-service.com" });
+});
+
+// Frontend: Sign with provided parameters
+const { state, nonce, message, recipient } = await fetch('/auth/initiate').then(r => r.json());
+
+const authToken = await sign(message, {
+  signer: wallet,
+  recipient,
+  nonce: fromHex(nonce),
+  state
+});
+
+// Backend: Verify with custom validation
+app.post('/auth/verify', async (req, res) => {
+  const { authToken } = req.body;
+  
+  try {
+    const result = await verify(authToken, {
+      validateNonce: (nonceFromToken) => {
+        const receivedNonceHex = toHex(nonceFromToken);
+        const storedRequest = authRequests.get(result.state);
+        
+        if (!storedRequest || receivedNonceHex !== storedRequest.nonce) {
+          return false;
+        }
+        
+        // Check for replay attacks
+        if (usedNonces.has(receivedNonceHex)) {
+          return false;
+        }
+        
+        usedNonces.add(receivedNonceHex);
+        return true;
+      },
+      validateState: (stateFromToken) => {
+        return authRequests.has(stateFromToken);
+      },
+      expectedMessage: "Authorize login"
+    });
+    
+    // Clean up
+    authRequests.delete(result.state);
+    
+    res.json({ success: true, accountId: result.accountId });
+  } catch (error) {
+    res.status(401).json({ error: error.message });
+  }
+});
+```
+
+## Security Considerations
+
+### 1. Nonce Management
+- **Default**: Timestamp-based with 24-hour expiration
+- **Production**: Use backend-generated nonces with shorter expiration
+- **Replay Protection**: Track used nonces in Redis/database
+
+### 2. State Validation
+- **Purpose**: CSRF attack prevention
+- **Implementation**: Generate random state, store server-side, validate on verification
+- **Cleanup**: Remove used states after successful verification
+
+### 3. Access Key Requirements
+- **Default**: Requires Full Access Key (NEP-413 standard)
+- **Override**: Set `requireFullAccessKey: false` (NOT recommended for production)
+- **Rationale**: Function Call keys can be compromised more easily
+
+### 4. Recipient Validation
+- **Purpose**: Ensure tokens are intended for your service
+- **Implementation**: Always validate recipient matches your service identifier
+- **Flexibility**: Use custom validation for multiple allowed recipients
+
+## Error Handling
+
+### Common Errors
+
+```typescript
+// Token parsing errors
+"Failed to parse auth token: Invalid base64 encoding"
+"Failed to parse auth token: Deserialization failed"
+
+// Nonce validation errors
+"Nonce validation failed: Invalid nonce length"
+"Nonce validation failed: Nonce has expired"
+"Nonce validation failed: Nonce timestamp is in the future"
+
+// Recipient validation errors
+"Recipient mismatch: expected 'service.near', but recipient is 'other.near'"
+
+// Public key verification errors
+"Public key ownership verification failed: API error or unexpected response"
+"Public key ownership verification failed: public key not associated with account"
+
+// Signature verification errors
+"Cryptographic signature verification failed: Ed25519 signature verification failed"
+
+// Custom validation errors
+"Custom nonce validation failed"
+"Custom state validation failed"
+```
+
+### Error Handling Pattern
+
+```typescript
+import { verify, parseAuthToken } from 'near-sign-verify';
+
+async function authenticateUser(authToken: string) {
+  try {
+    const result = await verify(authToken, {
+      expectedRecipient: "your-service.near",
+      nonceMaxAge: 300000
+    });
+    
+    return { success: true, user: result.accountId };
+  } catch (error) {
+    // Log for debugging
+    console.error('Authentication failed:', error.message);
+    
+    // Parse token for debugging (if needed)
+    try {
+      const authData = parseAuthToken(authToken);
+      console.log('Token data:', {
+        accountId: authData.accountId,
+        recipient: authData.recipient,
+        message: authData.message
+      });
+    } catch (parseError) {
+      console.error('Token parsing also failed:', parseError.message);
+    }
+    
+    return { success: false, error: error.message };
+  }
+}
+```
+
+## Wallet Integration
+
+### FastINTEAR Integration
+
+```typescript
+import * as wallet from 'fastintear';
+import { sign } from 'near-sign-verify';
+
+// FastINTEAR automatically implements WalletInterface
+const authToken = await sign("Login to app", {
+  signer: wallet,
+  recipient: "app.example.com"
+});
+```
+
+### NEAR Wallet Selector Integration
+
+```typescript
+import { setupWalletSelector } from '@near-wallet-selector/core';
+import { sign } from 'near-sign-verify';
+
+const selector = await setupWalletSelector({
+  network: "mainnet",
+  modules: [/* wallet modules */]
+});
+
+const wallet = await selector.wallet();
+
+const authToken = await sign("Login to app", {
+  signer: wallet,
+  recipient: "app.example.com"
+});
+```
+
+### Custom Wallet Implementation
+
+```typescript
+import { WalletInterface, SignMessageParams, SignedMessage } from 'near-sign-verify';
+
+class CustomWallet implements WalletInterface {
+  async signMessage(params: SignMessageParams): Promise<SignedMessage> {
+    // Your wallet implementation
+    // Must return NEP-413 compliant SignedMessage
+    return {
+      accountId: "user.near",
+      publicKey: "ed25519:...",
+      signature: "ed25519:...", // Base58 encoded signature
+      state: params.state
+    };
+  }
+}
+```
+
+## Advanced Usage
+
+### Custom Validation Functions
+
+```typescript
+import { verify } from 'near-sign-verify';
+
+const result = await verify(authToken, {
+  validateNonce: (nonce) => {
+    // Custom nonce validation logic
+    const nonceHex = Array.from(nonce).map(b => b.toString(16).padStart(2, '0')).join('');
+    return !usedNonces.has(nonceHex);
+  },
+  
+  validateRecipient: (recipient) => {
+    // Allow multiple recipients
+    const allowedRecipients = ['app.example.com', 'api.example.com', 'service.near'];
+    return allowedRecipients.includes(recipient);
+  },
+  
+  validateMessage: (message) => {
+    // Validate message format
+    return message.startsWith('LOGIN:') && message.length < 100;
+  },
+  
+  validateState: (state) => {
+    // Custom state validation
+    return state && authSessions.has(state);
+  }
+});
+```
+
+### Debugging and Monitoring
+
+```typescript
+import { parseAuthToken } from 'near-sign-verify';
+
+// Debug token contents
+function debugAuthToken(authToken: string) {
+  try {
+    const data = parseAuthToken(authToken);
+    console.log('Token Debug Info:', {
+      accountId: data.accountId,
+      publicKey: data.publicKey,
+      message: data.message,
+      recipient: data.recipient,
+      nonceAge: Date.now() - parseInt(new TextDecoder().decode(new Uint8Array(data.nonce.slice(0, 16))).replace(/^0+/, '')),
+      hasState: !!data.state,
+      hasCallback: !!data.callbackUrl
+    });
+  } catch (error) {
+    console.error('Failed to parse token:', error.message);
+  }
+}
+```
+
+## Performance Considerations
+
+- **Bundle Size**: ~50KB minified (optimized for web usage)
+- **Crypto Operations**: Ed25519 operations are fast (~1ms for sign/verify)
+- **Network Calls**: Public key verification requires FastNEAR API call
+- **Caching**: Consider caching public key verification results
+- **Rate Limiting**: Implement rate limiting for authentication endpoints
+
+## Testing
+
+```typescript
+import { sign, verify, generateNonce } from 'near-sign-verify';
+import { KeyPair } from '@near-js/crypto';
+
+// Test with KeyPair
+const keyPair = KeyPair.fromRandom('ed25519');
+const message = "test message";
+const recipient = "test.near";
+
+const authToken = await sign(message, {
+  signer: keyPair.toString(),
+  accountId: "test.near",
+  recipient
+});
+
+const result = await verify(authToken, {
+  expectedRecipient: recipient,
+  expectedMessage: message,
+  requireFullAccessKey: false // For testing only
+});
+
+console.assert(result.accountId === "test.near");
+console.assert(result.message === message);
+```
+
+This comprehensive guide provides everything needed to implement secure NEAR Protocol authentication using the near-sign-verify library, including detailed explanations of the underlying cryptographic operations, security considerations, and practical implementation patterns.
