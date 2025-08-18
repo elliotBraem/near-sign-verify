@@ -35,8 +35,16 @@
     "signature",
     "authentication"
   ],
-  "author": "elliotBraem",
+  "author": "efiz.near",
   "license": "MIT",
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/elliotBraem/near-sign-verify.git"
+  },
+  "bugs": {
+    "url": "https://github.com/elliotBraem/near-sign-verify/issues"
+  },
+  "homepage": "https://github.com/elliotBraem/near-sign-verify#readme",
   "dependencies": {
     "@noble/curves": "^1.9.1",
     "@noble/hashes": "^1.8.0",
