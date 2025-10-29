@@ -1,4 +1,4 @@
-import { ed25519 } from "@noble/curves/ed25519";
+import { ed25519 } from "@noble/curves/ed25519.js";
 import { base58, base64 } from "@scure/base";
 import {
   ED25519_PREFIX,

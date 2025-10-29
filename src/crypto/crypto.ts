@@ -1,5 +1,5 @@
-import { ed25519 } from "@noble/curves/ed25519";
-import { sha256 } from "@noble/hashes/sha2";
+import { ed25519 } from "@noble/curves/ed25519.js";
+import { sha256 } from "@noble/hashes/sha2.js";
 import { base58 } from "@scure/base";
 import { b } from "@zorsh/zorsh";
 import { SignedPayloadSchema } from "../schemas.js";

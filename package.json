@@ -1,6 +1,6 @@
 {
   "name": "near-sign-verify",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Creates and validates NEAR signatures for API authentication.",
   "type": "module",
   "main": "dist/index.js",
@@ -46,9 +46,9 @@
   },
   "homepage": "https://github.com/elliotBraem/near-sign-verify#readme",
   "dependencies": {
-    "@noble/curves": "^1.9.7",
-    "@noble/hashes": "^1.8.0",
-    "@scure/base": "^1.2.6",
+    "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^2.0.1",
+    "@scure/base": "^2.0.0",
     "@zorsh/zorsh": "^0.3.3"
   },
   "devDependencies": {
