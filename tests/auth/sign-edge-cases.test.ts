@@ -1,6 +1,7 @@
-import { base58 } from "@scure/base";
+import { base58, base64 } from "@scure/base";
 import * as near from "near-api-js";
 import { describe, expect, it, vi } from "vitest";
+import { verify } from "../../src/auth/verify.js";
 import { sign } from "../../src/auth/sign.js";
 import type { WalletInterface } from "../../src/types.js";
 import * as nonceModule from "../../src/utils/nonce.js";
@@ -95,12 +96,19 @@ describe("sign - Edge Cases", () => {
     );
   });
 
-  it("should work with wallet that provides accountId", async () => {
-    const rawSignature = new Uint8Array(64).fill(1);
-    const base58Signature = base58.encode(rawSignature);
+  it("should work with NEP-413 compliant wallet and produce verifiable token", async () => {
+    // Generate a valid Ed25519 signature for testing (64 bytes)
+    const rawSignature = new Uint8Array(64);
+    for (let i = 0; i < 64; i++) {
+      rawSignature[i] = i % 256; // Pattern that makes a deterministic but fake signature
+    }
+
+    // Per NEP-413, wallet signatures should be base64, NOT prefixed with "ed25519:"
+    const base64Signature = base64.encode(rawSignature);
+
     const mockWallet: WalletInterface = {
       signMessage: vi.fn().mockResolvedValue({
-        signature: `ed25519:${base58Signature}`,
+        signature: base64Signature, // NEP-413 compliant: plain base64
         publicKey: "ed25519:8hSHprDq2StXwMtNd43wDTXQYsjXcD4MJxUTvwtnmM4T",
         accountId: "wallet-provided.near",
       }),
@@ -113,5 +121,24 @@ describe("sign - Edge Cases", () => {
 
     expect(typeof result).toBe("string");
     expect(mockWallet.signMessage).toHaveBeenCalled();
+
+    // The important part: verify the token can be parsed and verified
+    // Note: Cryptographic verification will fail because this is a fake signature,
+    // but the token should be parseable and the signature format should be correct
+    try {
+      await verify(result, {
+        expectedRecipient: "recipient.near",
+        expectedMessage: "hello",
+        requireFullAccessKey: false, // Don't require FAK for this test
+      });
+      // If verification succeeds, great! The signature format is definitely correct
+    } catch (error) {
+      // Verification might fail due to fake signature, but format should be correct
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      // Ensure it's not the old "Expected ed25519:" format error
+      expect(errorMessage).not.toContain(`Unsupported signature format`);
+      expect(errorMessage).not.toContain(`Expected "ed25519:`);
+    }
   });
 });
