@@ -81,28 +81,11 @@ async function _signWithWallet(
     nonce,
     recipient,
   });
-  // walletResult.signature is expected to be a string like "ed25519:Base58EncodedSignature"
-  // walletResult.publicKey is expected to be a string like "ed25519:Base58EncodedPublicKey"
-  // walletResult.state is optional and passed through if present
-
-  const sigParts = walletResult.signature.split(":");
-  if (sigParts.length !== 2 || sigParts[0].toLowerCase() !== "ed25519") {
-    throw new Error(
-      `Unsupported signature format from wallet: ${walletResult.signature}. Expected "ed25519:<base58_signature>"`,
-    );
-  }
-  const base58EncodedSignature = sigParts[1];
-
-  // Decode the Base58 signature to get the raw 64-byte signature
-  const rawSignatureBytes = base58.decode(base58EncodedSignature);
-
-  // Base64 encode the raw signature bytes
-  const actualSignatureB64 = base64.encode(rawSignatureBytes);
 
   const nearAuthDataObject: NearAuthData = {
     accountId: walletResult.accountId,
     publicKey: walletResult.publicKey, // full "ed25519:<base58_pk>" string
-    signature: actualSignatureB64, // Base64 of the *raw* 64-byte signature
+    signature: walletResult.signature,
     message: message,
     nonce: Array.from(nonce),
     recipient: recipient,

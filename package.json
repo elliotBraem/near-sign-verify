@@ -1,6 +1,6 @@
 {
   "name": "near-sign-verify",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Creates and validates NEAR signatures for API authentication.",
   "type": "module",
   "main": "dist/index.js",
@@ -37,7 +37,7 @@
   ],
   "author": "efiz.near",
   "license": "MIT",
-    "repository": {
+  "repository": {
     "type": "git",
     "url": "https://github.com/elliotBraem/near-sign-verify.git"
   },
@@ -46,7 +46,7 @@
   },
   "homepage": "https://github.com/elliotBraem/near-sign-verify#readme",
   "dependencies": {
-    "@noble/curves": "^1.9.1",
+    "@noble/curves": "^1.9.7",
     "@noble/hashes": "^1.8.0",
     "@scure/base": "^1.2.6",
     "@zorsh/zorsh": "^0.3.3"
@@ -54,16 +54,16 @@
   "devDependencies": {
     "near-api-js": "^5.1.1",
     "@size-limit/preset-small-lib": "^11.2.0",
-    "@types/node": "^20.10.5",
-    "@vitest/coverage-v8": "^1.2.1",
-    "dotenv": "^16.5.0",
-    "eslint": "^8.56.0",
-    "prettier": "^3.5.3",
-    "rimraf": "^5.0.5",
+    "@types/node": "^20.19.24",
+    "@vitest/coverage-v8": "^1.6.1",
+    "dotenv": "^16.6.1",
+    "eslint": "^8.57.1",
+    "prettier": "^3.6.2",
+    "rimraf": "^5.0.10",
     "size-limit": "^11.2.0",
-    "tsup": "^8.0.1",
-    "typescript": "^5.3.3",
-    "vitest": "^1.2.1"
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.1"
   },
   "publishConfig": {
     "access": "public"
