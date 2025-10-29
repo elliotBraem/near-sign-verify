@@ -134,7 +134,8 @@ describe("sign - Edge Cases", () => {
       // If verification succeeds, great! The signature format is definitely correct
     } catch (error) {
       // Verification might fail due to fake signature, but format should be correct
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       // Ensure it's not the old "Expected ed25519:" format error
       expect(errorMessage).not.toContain(`Unsupported signature format`);
       expect(errorMessage).not.toContain(`Expected "ed25519:`);
